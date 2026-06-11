@@ -510,6 +510,7 @@ const State = {
   screen: 'dashboard',
   txFilter: { year:'all', ticker:'', broker:'all', type:'all' },
   fifo: null,       // computed FIFO result
+  holdingsSort: 'value', // 'value' | 'az' | 'za'
 };
 
 // ===== FIFO ENGINE =====
@@ -749,9 +750,18 @@ ${sortedByDay.length ? `
 }
 
 // ===== HOLDINGS =====
+function cycleHoldingsSort() {
+  const next = { value:'az', az:'za', za:'value' };
+  State.holdingsSort = next[State.holdingsSort];
+  renderHoldings();
+}
+
 function renderHoldings() {
   const { positions } = calcPortfolio();
-  positions.sort((a,b)=>b.mktVal-a.mktVal);
+  if (State.holdingsSort === 'az') positions.sort((a,b)=>a.ticker.localeCompare(b.ticker));
+  else if (State.holdingsSort === 'za') positions.sort((a,b)=>b.ticker.localeCompare(a.ticker));
+  else positions.sort((a,b)=>b.mktVal-a.mktVal);
+  const sortLabel = { value:'VALUE ↓', az:'A → Z', za:'Z → A' }[State.holdingsSort];
   const html = positions.map(p => {
     const c = getChange(p.ticker);
     const realPL = REALIZED_PL[p.ticker]||0;
@@ -790,7 +800,10 @@ function renderHoldings() {
   document.getElementById('screen-holdings').innerHTML = `
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
   <div style="font-size:11px;color:var(--t3)">${priceAgeStr()}</div>
-  ${isStale()?'<span class="stale">STALE</span>':''}
+  <div style="display:flex;align-items:center;gap:8px">
+    ${isStale()?'<span class="stale">STALE</span>':''}
+    <button onclick="cycleHoldingsSort()" style="font-size:11px;font-weight:600;letter-spacing:.05em;padding:3px 9px;border-radius:5px;border:1px solid var(--border);background:var(--card);color:var(--t2);cursor:pointer">${sortLabel}</button>
+  </div>
 </div>
 ${html}<div style="height:8px"></div>`;
 }
