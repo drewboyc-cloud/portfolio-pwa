@@ -794,7 +794,6 @@ function renderHoldings() {
           <div class="num ${plClass(p.totalPL)}" style="font-size:14px;font-weight:700">${fmt$(p.totalPL,0)}</div>
         </div>
       </div>
-      ${!State.priceTs ? '<div class="loading-bar"><div class="loading-bar-inner"></div></div>' : ''}
     </div>`;
   }).join('');
   document.getElementById('screen-holdings').innerHTML = `
