@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Portfolio">
+<meta name="theme-color" content="#080E1C">
+<link rel="manifest" href="manifest.json">
+<title>Portfolio</title>
+<style>
+:root{--bg:#080E1C;--s1:#0F1629;--s2:#162036;--s3:#1C2A45;--bd:#1E2D45;--t1:#E8EEF7;--t2:#8A9BB5;--t3:#445572;--g:#00D09C;--gd:rgba(0,208,156,.12);--r:#FF4560;--rd:rgba(255,69,96,.12);--b:#3B82F6;--bd2:rgba(59,130,246,.15);--gold:#F5A623;--font:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;--mono:'SF Mono','Roboto Mono',monospace;--rad:12px;--rad-s:8px;--top:52px;--nav:83px}
+[data-theme=light]{--bg:#F0F4FA;--s1:#FFFFFF;--s2:#F5F7FB;--s3:#EBF0F8;--bd:#D8E2EF;--t1:#0A1628;--t2:#445572;--t3:#8A9BB5}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-behavior:none;-webkit-font-smoothing:antialiased;min-height:100vh}
+/* LAYOUT */
+#app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+#topbar{position:fixed;top:0;left:0;right:0;height:var(--top);padding:0 16px;padding-top:env(safe-area-inset-top);display:flex;align-items:center;justify-content:space-between;background:var(--s1);border-bottom:1px solid var(--bd);z-index:200;gap:8px}
+#topbar-title{font-size:16px;font-weight:700;letter-spacing:.08em;color:var(--t1);flex:1}
+#topbar-sub{font-size:11px;color:var(--t3);text-align:center;flex:1}
+#topbar-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{background:none;border:none;color:var(--t2);padding:6px;border-radius:6px;cursor:pointer;display:flex;align-items:center;font-size:18px;transition:color .15s}
+.icon-btn:active{color:var(--t1)}
+#screens{position:fixed;top:var(--top);bottom:var(--nav);left:0;right:0;overflow:hidden}
+.screen{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 8px;display:none;animation:fadeIn .2s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+#navbar{position:fixed;bottom:0;left:0;right:0;height:var(--nav);padding-bottom:env(safe-area-inset-bottom);background:var(--s1);border-top:1px solid var(--bd);display:flex;z-index:200}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--t3);transition:color .15s;padding-bottom:4px;border:none;background:none}
+.nav-tab.active{color:var(--b)}
+.nav-tab svg{width:22px;height:22px}
+.nav-tab span{font-size:10px;font-weight:600;letter-spacing:.02em}
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:14px;margin-bottom:10px}
+.card-sm{padding:10px 12px;margin-bottom:8px}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--t3);text-transform:uppercase}
+/* HERO NUMBERS */
+.hero{font-size:32px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em;line-height:1}
+.hero-sm{font-size:22px;font-weight:700;font-family:var(--mono)}
+.hero-xs{font-size:16px;font-weight:600;font-family:var(--mono)}
+.num{font-family:var(--mono)}
+/* P&L COLORS */
+.pos{color:var(--g)}
+.neg{color:var(--r)}
+.neu{color:var(--t2)}
+.pos-bg{background:var(--gd);color:var(--g)}
+.neg-bg{background:var(--rd);color:var(--r)}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.04em}
+.badge-buy{background:var(--gd);color:var(--g)}
+.badge-sell{background:var(--rd);color:var(--r)}
+.badge-asgn{background:rgba(245,166,35,.15);color:var(--gold)}
+.badge-corp{background:rgba(59,130,246,.15);color:var(--b)}
+.badge-sadj{background:rgba(138,155,181,.12);color:var(--t2)}
+/* ROW / TABLE */
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);cursor:pointer;gap:8px}
+.row:last-child{border-bottom:none}
+.row:active{background:var(--s2);margin:0 -12px;padding:10px 12px}
+.row-left{flex:1;min-width:0}
+.row-right{text-align:right;flex-shrink:0}
+.ticker{font-size:15px;font-weight:700;letter-spacing:.02em}
+.co-name{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+/* FILTERS */
+.filter-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.filter-bar::-webkit-scrollbar{display:none}
+.pill{background:var(--s2);border:1px solid var(--bd);color:var(--t2);font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s}
+.pill.active{background:var(--b);border-color:var(--b);color:#fff}
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:10px}
+.search-inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-s);padding:9px 12px 9px 34px;color:var(--t1);font-size:14px;outline:none}
+.search-inp::placeholder{color:var(--t3)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3)}
+/* GRID STATS */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.stat-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.stat{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad-s);padding:10px 12px}
+.stat-label{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;margin-bottom:4px}
+.stat-val{font-size:16px;font-weight:700;font-family:var(--mono)}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--rad-s);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s}
+.btn:active{opacity:.75}
+.btn-primary{background:var(--b);color:#fff}
+.btn-outline{background:none;border:1px solid var(--bd);color:var(--t1)}
+.btn-danger{background:var(--rd);color:var(--r);border:1px solid var(--r)}
+.btn-sm{padding:7px 14px;font-size:13px}
+.btn-full{width:100%;justify-content:center}
+/* FAB */
+#fab{position:fixed;bottom:calc(var(--nav) + 16px);right:16px;width:52px;height:52px;background:var(--b);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,.4);z-index:150;border:none;transition:transform .15s}
+#fab:active{transform:scale(.9)}
+/* MODALS / SHEETS */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;display:none;opacity:0;transition:opacity .25s}
+.sheet-overlay.open{display:flex;flex-direction:column;justify-content:flex-end}
+.sheet-overlay.visible{opacity:1}
+.sheet{background:var(--s1);border-radius:20px 20px 0 0;padding:0 16px 0;padding-bottom:env(safe-area-inset-bottom);max-height:92dvh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.32,1);will-change:transform}
+.sheet.open{transform:none}
+.sheet-handle{width:36px;height:4px;background:var(--t3);border-radius:2px;margin:12px auto 16px}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:16px;padding-top:4px}
+.sheet-title-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-top:4px}
+.sheet-close{background:var(--s3);border:none;color:var(--t2);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+/* FORMS */
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px;display:block}
+.form-input{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-s);padding:10px 12px;color:var(--t1);font-size:15px;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--b)}
+.form-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A9BB5' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.seg-control{display:flex;background:var(--s2);border-radius:var(--rad-s);padding:3px;gap:3px}
+.seg-btn{flex:1;padding:7px;border:none;background:none;border-radius:6px;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;transition:all .15s}
+.seg-btn.active{background:var(--s1);color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+/* BULK PASTE GRID */
+.bulk-grid{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}
+.bulk-grid th{background:var(--s2);color:var(--t3);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:7px 8px;text-align:left;border-bottom:1px solid var(--bd)}
+.bulk-grid td{padding:4px 4px;border-bottom:1px solid var(--bd)}
+.bulk-grid td input{width:100%;background:var(--s2);border:1px solid transparent;border-radius:4px;padding:5px 6px;color:var(--t1);font-size:13px;font-family:var(--mono);outline:none}
+.bulk-grid td input:focus{border-color:var(--b)}
+/* HOLDINGS ROW */
+.holding-row{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:12px;margin-bottom:8px;cursor:pointer;transition:background .15s}
+.holding-row:active{background:var(--s2)}
+.hr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.hr-bottom{display:flex;justify-content:space-between;align-items:center}
+.hr-price{font-size:17px;font-weight:700;font-family:var(--mono)}
+.hr-mkt{font-size:13px;color:var(--t2);font-family:var(--mono)}
+.hr-unreal{font-size:13px;font-family:var(--mono);font-weight:600}
+.hr-change{font-size:12px;font-family:var(--mono)}
+.loading-bar{height:2px;background:var(--bd);border-radius:1px;overflow:hidden;margin-top:6px}
+.loading-bar-inner{height:100%;background:var(--b);border-radius:1px;animation:loadSlide 1.5s ease-in-out infinite}
+@keyframes loadSlide{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+/* REFRESH BTN */
+.refreshing svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* CHART CONTAINER */
+.chart-wrap{width:100%;overflow:hidden;border-radius:var(--rad-s)}
+/* SECTION HEADER */
+.sec-head{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t3);text-transform:uppercase;padding:16px 0 8px}
+/* STALE BADGE */
+.stale{font-size:10px;color:var(--gold);background:rgba(245,166,35,.12);padding:2px 7px;border-radius:4px;font-weight:600}
+/* SPARKLINE WRAPPER */
+.spark-wrap{height:50px;margin:8px 0}
+/* IMPORT REVIEW TABLE */
+.import-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+.import-table th{background:var(--s2);color:var(--t3);font-size:10px;font-weight:600;padding:6px 8px;text-align:left;border-bottom:1px solid var(--bd)}
+.import-table td{padding:6px 8px;border-bottom:1px solid var(--bd);font-family:var(--mono);color:var(--t1)}
+.import-table tr.dup{opacity:.4}
+/* SCROLLBAR HIDE */
+.no-scroll::-webkit-scrollbar{display:none}
+/* TOAST */
+#toast{position:fixed;bottom:calc(var(--nav)+12px);left:50%;transform:translateX(-50%) translateY(20px);background:#1C2A45;border:1px solid var(--b);color:var(--t1);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:500;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* DIVIDER */
+.divider{height:1px;background:var(--bd);margin:12px 0}
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:var(--t3);text-align:center;gap:10px}
+.empty-icon{font-size:40px;opacity:.4}
+.empty-text{font-size:14px}
+/* DETAIL LOT TABLE */
+.lot-table{width:100%;border-collapse:collapse;font-size:12px}
+.lot-table th{color:var(--t3);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 6px;text-align:right;border-bottom:1px solid var(--bd)}
+.lot-table th:first-child{text-align:left}
+.lot-table td{padding:7px 6px;border-bottom:1px solid var(--bd);font-family:var(--mono);text-align:right;font-size:12px}
+.lot-table td:first-child{text-align:left;color:var(--t2)}
+/* BENCHMARK BAR */
+.bench-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bench-label{width:60px;font-size:11px;font-weight:600;color:var(--t2)}
+.bench-bar-wrap{flex:1;height:20px;background:var(--s2);border-radius:4px;overflow:hidden;position:relative}
+.bench-bar{height:100%;border-radius:4px;transition:width .5s ease;display:flex;align-items:center;padding:0 6px;min-width:2px}
+.bench-val{font-size:11px;font-weight:700;font-family:var(--mono);white-space:nowrap;position:absolute;right:6px;top:50%;transform:translateY(-50%)}
+/* SETTINGS ROW */
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--bd)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:14px;color:var(--t1)}
+.setting-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.setting-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+/* TOGGLE SWITCH */
+.toggle{position:relative;width:44px;height:26px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--s3);border-radius:13px;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--b)}
+.toggle-slider:before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
+</style>
+</head>
+<body>
+<div id="app">
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="topbar-title">PORTFOLIO</div>
+  <div id="topbar-sub" id="price-age"></div>
+  <div id="topbar-actions">
+    <button class="icon-btn" id="btn-theme" title="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-refresh" title="Refresh prices">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-settings" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div id="screens">
+  <div class="screen active" id="screen-dashboard"></div>
+  <div class="screen" id="screen-holdings"></div>
+  <div class="screen" id="screen-closed"></div>
+  <div class="screen" id="screen-transactions"></div>
+  <div class="screen" id="screen-analytics"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav id="navbar">
+  <button class="nav-tab active" data-screen="dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>DASH</span>
+  </button>
+  <button class="nav-tab" data-screen="holdings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    <span>HOLDINGS</span>
+  </button>
+  <button class="nav-tab" data-screen="closed">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    <span>CLOSED</span>
+  </button>
+  <button class="nav-tab" data-screen="transactions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <span>TRADES</span>
+  </button>
+  <button class="nav-tab" data-screen="analytics">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>ANALYTICS</span>
+  </button>
+</nav>
+
+<!-- FAB -->
+<button id="fab" title="Add trade">+</button>
+
+<!-- TOAST -->
+<div id="toast"></div>
+</div>
+
+<!-- ========== SHEET: STOCK DETAIL ========== -->
+<div class="sheet-overlay" id="sheet-detail">
+  <div class="sheet" id="sheet-detail-inner">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title-bar">
+      <div>
+        <div class="ticker" id="detail-ticker"></div>
+        <div class="co-name" id="detail-name"></div>
+      </div>
+      <button class="sheet-close" onclick="closeSheet('detail')">✕</button>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<!-- ========== SHEET: ADD TRADE ========== -->
+<div class="sheet-overlay" id="sheet-addtrade">
+  <div class="sheet" id="sheet-addtrade-inner">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title-bar">
+      <div class="sheet-title">Add Trade</div>
+      <button class="sheet-close" onclick="closeSheet('addtrade')">✕</button>
+    </div>
+    <div class="seg-control" style="margin-bottom:16px" id="add-mode-seg">
+      <button class="seg-btn active" onclick="setAddMode('single',this)">Single Entry</button>
+      <button class="seg-btn" onclick="setAddMode('bulk',this)">Bulk Paste</button>
+      <button class="seg-btn" onclick="setAddMode('csv',this)">IBKR CSV</button>
+    </div>
+    <div id="add-single">
+      <div class="form-group">
+        <label class="form-label">Broker</label>
+        <select class="form-input form-select" id="at-broker">
+          <option>Schwab / TD Ameritrade</option>
+          <option>IBKR</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" type="date" id="at-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ticker</label>
+          <input class="form-input" type="text" id="at-ticker" placeholder="AAPL" maxlength="10" style="text-transform:uppercase">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Action</label>
+        <select class="form-input form-select" id="at-action">
+          <option value="buy">Buy</option>
+          <option value="sell">Sell</option>
+          <option value="asgn-buy">Assignment – Buy (Put Assigned)</option>
+          <option value="asgn-sell">Assignment – Sell (Call Called Away)</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Shares</label>
+          <input class="form-input" type="number" id="at-qty" placeholder="100" min="0.0001" step="any">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price/sh</label>
+          <input class="form-input" type="number" id="at-price" placeholder="150.00" min="0" step="any">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Commission</label>
+          <input class="form-input" type="number" id="at-comm" placeholder="0" min="0" step="any" value="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <input class="form-input" type="text" id="at-notes" placeholder="e.g. AAPL 150 put assignment">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="submitSingleTrade()" style="margin-bottom:20px">Save Trade</button>
+    </div>
+    <div id="add-bulk" style="display:none">
+      <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Enter multiple trades below. All rows save at once.</p>
+      <div style="overflow-x:auto">
+        <table class="bulk-grid" id="bulk-table">
+          <thead><tr><th>Date</th><th>Broker</th><th>Ticker</th><th>Action</th><th>Shares</th><th>Price</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="bulk-tbody"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="addBulkRow()" style="margin-bottom:12px">+ Add Row</button>
+      <button class="btn btn-primary btn-full" onclick="submitBulkTrades()" style="margin-bottom:20px">Save All Trades</button>
+    </div>
+    <div id="add-csv" style="display:none">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:14px">Upload an IBKR Activity Statement CSV (annual file). New trades after Jun 9 2026 will be imported. Duplicates are skipped automatically.</p>
+      <input type="file" accept=".csv" id="csv-file-input" style="display:none" onchange="handleCSVFile(this)">
+      <button class="btn btn-outline btn-full" onclick="document.getElementById('csv-file-input').click()" style="margin-bottom:16px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Choose CSV File
+      </button>
+      <div id="csv-preview" style="display:none">
+        <div class="sec-head">Preview – New Trades Found</div>
+        <div style="overflow-x:auto;margin-bottom:12px"><table class="import-table" id="csv-preview-table"></table></div>
+        <div id="csv-summary" style="font-size:13px;color:var(--t2);margin-bottom:14px"></div>
+        <button class="btn btn-primary btn-full" id="csv-confirm-btn" style="margin-bottom:20px">Import Selected Trades</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SHEET: SETTINGS ========== -->
+<div class="sheet-overlay" id="sheet-settings">
+  <div class="sheet" id="sheet-settings-inner">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title-bar">
+      <div class="sheet-title">Settings</div>
+      <button class="sheet-close" onclick="closeSheet('settings')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Finnhub API Key</label>
+      <input class="form-input" type="password" id="set-apikey" placeholder="Your Finnhub key">
+    </div>
+    <div class="card card-sm" style="margin-bottom:14px">
+      <div class="setting-row">
+        <div><div class="setting-label">Light Mode</div></div>
+        <div class="setting-right">
+          <label class="toggle"><input type="checkbox" id="set-theme"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Last Price Update</div><div class="setting-sub" id="set-last-update">Never</div></div>
+        <div class="setting-right"><button class="btn btn-outline btn-sm" onclick="App.refresh()">Refresh Now</button></div>
+      </div>
+    </div>
+    <div class="sec-head">Data Management</div>
+    <div class="card card-sm" style="margin-bottom:14px">
+      <div class="setting-row">
+        <div><div class="setting-label">Add Splits</div><div class="setting-sub">Manually add future stock splits</div></div>
+        <div class="setting-right"><button class="btn btn-outline btn-sm" onclick="openSplitForm()">Add Split</button></div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Export Portfolio</div><div class="setting-sub">Download complete data as JSON</div></div>
+        <div class="setting-right"><button class="btn btn-outline btn-sm" onclick="exportData()">Export</button></div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Import Backup</div><div class="setting-sub">Restore from exported JSON</div></div>
+        <div class="setting-right">
+          <input type="file" accept=".json" id="import-file" style="display:none" onchange="importData(this)">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file').click()">Import</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Manual Trades</div><div class="setting-sub" id="set-manual-count">0 trades in IndexedDB</div></div>
+        <div class="setting-right"><button class="btn btn-danger btn-sm" onclick="clearManualTrades()">Clear</button></div>
+      </div>
+    </div>
+    <div id="split-form" style="display:none" class="card card-sm" style="margin-bottom:14px">
+      <div class="sec-head" style="padding-top:0">New Split</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="form-group"><label class="form-label">Ticker</label><input class="form-input" type="text" id="sp-ticker" placeholder="NVDA" style="text-transform:uppercase"></div>
+        <div class="form-group"><label class="form-label">Ratio</label><input class="form-input" type="number" id="sp-ratio" placeholder="4" min="1" step="any"></div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="sp-date"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveSplit()">Save Split</button>
+    </div>
+    <button class="btn btn-outline btn-full" onclick="closeSheet('settings')" style="margin-bottom:20px">Done</button>
+  </div>
+</div>
+
+<script>
+// ===== CONSTANTS =====
+const DEFAULT_KEY = 'd8l3tphr01qut1f8rjogd8l3tphr01qut1f8rjp0';
+
+const SPLITS_BASE = [
+  ['AAPL',4,'2020-08-31'],['TTD',10,'2021-06-17'],['NVDA',4,'2021-07-20'],
+  ['ADYEY',2,'2021-08-24'],['ISRG',3,'2021-10-05'],['AMZN',20,'2022-06-06'],
+  ['SHOP',10,'2022-06-29'],['GOOGL',20,'2022-07-18'],['TSLA',3,'2022-08-25'],
+  ['ANET',4,'2024-12-04'],['PANW',2,'2024-12-16'],['NOW',5,'2025-12-18']
+];
+
+const TICKER_ALIASES = {FB:'META',AAXN:'AXON',BOMN:'BOC'};
+
+const IBKR_POSITIONS = {
+  AAPL:{qty:155,cost:170.6274,ibkrClose:290.55},
+  ADBE:{qty:62,cost:406.0147,ibkrClose:237.88},
+  AMZN:{qty:75,cost:165.4576,ibkrClose:244.19},
+  ANET:{qty:140,cost:135.3211,ibkrClose:152.16},
+  AVGO:{qty:45,cost:353.61,ibkrClose:392.16},
+  BKNG:{qty:40,cost:165.6345,ibkrClose:163.99},
+  CRM:{qty:90,cost:240.1475,ibkrClose:175.35},
+  ETSY:{qty:176,cost:85.3037,ibkrClose:68.76},
+  FTNT:{qty:75,cost:78.6191,ibkrClose:138.39},
+  GOOGL:{qty:190,cost:133.8923,ibkrClose:364.26},
+  GRAB:{qty:1400,cost:3.993,ibkrClose:3.30},
+  MCD:{qty:60,cost:282.3697,ibkrClose:282.25},
+  META:{qty:54,cost:378.814,ibkrClose:584.59},
+  MSFT:{qty:100,cost:299.4372,ibkrClose:403.41},
+  NKE:{qty:200,cost:83.2236,ibkrClose:44.65},
+  NOW:{qty:195,cost:119.7188,ibkrClose:106.97},
+  NUKZ:{qty:50,cost:68.722,ibkrClose:67.10},
+  NVDA:{qty:70,cost:187.1766,ibkrClose:208.19},
+  ORCL:{qty:130,cost:170.3268,ibkrClose:205.81},
+  PANW:{qty:200,cost:171.968,ibkrClose:260.52},
+  VEEV:{qty:115,cost:195.455,ibkrClose:167.68},
+  YUMC:{qty:200,cost:41.8543,ibkrClose:42.72}
+};
+
+const REALIZED_PL = {"UNH":1957.5,"ASHR":364,"FSLY":-4919,"OKTA":-4847.77,"BA":1429.7,"TTD":10523.5,"BAC":-131.46,"SKYY":257.2,"XLK":92,"LYV":75,"TWLO":1776.2,"BABA":-1513.4,"DIA":51.28,"MMM":127.75,"NSRGY":-38.7,"CRM":8554.3,"DIS":-856.06,"META":24894,"GOOGL":11395.27,"FIVG":175,"MCD":1034.46,"NKE":3203,"AMZN":21346.71,"JNJ":1200,"YUM":180,"ITA":-354.7,"QQQ":7102.1,"ANET":7127.96,"APPN":-705.85,"KO":1188.2,"ATVI":2475.32,"MNST":70.5,"ZEN":892.66,"TCEHY":242.8,"SLB":-230.5,"LMT":47.5,"DOCU":-2990.2,"ETSY":8931.65,"INTC":-2.5,"MDB":2699,"MGNI":-1293.6,"NVTA":-776.2,"PTON":-504.4,"PYPL":-58.08,"RDFN":857.5,"ROKU":7273.02,"SQ":-2250.77,"TSLA":192.57,"ZG":-1381.2,"ZNGA":570.5,"AXON":504.8,"DDOG":11755.76,"MELI":15399.71,"SFIX":-6639.45,"ZM":-1057.12,"JPM":1636.7,"PG":51.08,"RHHBY":10,"UL":111.04,"YUMC":649.5,"BIDU":390,"MSFT":9902.43,"NEWR":3.5,"PFE":150,"XLE":312.75,"AAPL":4329,"ARKK":1020.4,"SPCE":739.5,"BYND":32.2,"SOFI":96,"CWBHF":-577,"EQIX":342.55,"PRLB":-321.85,"RGEN":407.5,"HQY":15,"CMPS":498.45,"IPOD":-29.57,"NEE":72,"NVDA":5171.9,"VBK":687.69,"ZBRA":404,"MA":234.32,"JD":457,"TSM":1225.5,"DMTK":-1010.45,"DNMR":-2392.2,"PLL":-330,"RNLX":-719,"CURI":-1502.5,"SDGR":-1235.8,"APPF":-188.64,"CLOV":-594.1,"GLOB":324,"HCAT":-144,"INSP":90,"PHR":-366,"SMAR":-99.5,"VCYT":-133.5,"AVAV":-370,"NICE":520.6,"FROG":145.5,"VINP":-545.8,"FTHM":-1438.25,"GDRX":-2534.6,"LSPD":-2448.8,"OPEN":-1583.15,"BAND":-5601.24,"BL":-919,"WIX":-3258.9,"TWTR":-116,"OM":-1658,"SKLZ":-1083.38,"FIVN":-931.05,"COUP":-3352.72,"TXG":-2912.5,"AFRM":-2875,"SPT":-20,"AYX":-900.5,"BITO":-960,"GSHD":-1269,"TDOC":-6362.5,"FVRR":-8142.54,"COIN":-2932.36,"DOCN":-2542.86,"FLGT":-1627.75,"LMND":-8020.81,"NVCR":-2449.8,"UPST":-7357.49,"PD":-1122.18,"BOC":-920.2,"WD":5,"ZS":791.79,"ADYEY":-1908.95,"CRSP":-892.6,"ESTC":1295.5,"NIO":-2118.25,"KNSL":4198.43,"HUBS":1573.06,"LOB":-1104.1,"U":-3504.73,"ISRG":6159,"LRCX":6148,"SNOW":-1452.65,"PINS":-1862.95,"CRWD":2695.88,"SE":-2511.45,"BLK":1789.33,"USB":345,"RBLX":-950.9,"SBUX":1032.5,"ICE":653.75,"CHWY":-179.3,"SHOP":8321.46,"ADSK":1313.5,"NET":1980,"NFLX":3801,"NOW":3494,"TEAM":2214.6,"ASML":4123.91,"VEEV":4032.64,"PANW":650,"SPY":4215,"VOO":3976,"SPGI":444.7,"VTI":11387.63,"AVGO":0,"BKNG":0,"FTNT":0,"GRAB":0,"NUKZ":0,"ORCL":0,"ADBE":0};
+
+const SP500 = {2019:31.49,2020:18.4,2021:28.71,2022:-18.11,2023:26.29,2024:25.02};
+
+const COMPANY_NAMES = {
+  AAPL:'Apple',ADBE:'Adobe',AMZN:'Amazon',ANET:'Arista Networks',AVGO:'Broadcom',
+  BKNG:'Booking Holdings',CRM:'Salesforce',ETSY:'Etsy',FTNT:'Fortinet',
+  GOOGL:'Alphabet',GRAB:'Grab Holdings',MCD:"McDonald's",META:'Meta Platforms',
+  MSFT:'Microsoft',NKE:'Nike',NOW:'ServiceNow',NUKZ:'Range Nuclear ETF',
+  NVDA:'NVIDIA',ORCL:'Oracle',PANW:'Palo Alto Networks',VEEV:'Veeva Systems',
+  YUMC:'Yum China',TTD:'Trade Desk',DDOG:'Datadog',SHOP:'Shopify',MELI:'MercadoLibre',
+  ROKU:'Roku',LRCX:'Lam Research',ISRG:'Intuitive Surgical',ASML:'ASML Holding',
+  NFLX:'Netflix',MDB:'MongoDB',CRWD:'CrowdStrike',NET:'Cloudflare',TWLO:'Twilio',
+  TEAM:'Atlassian',ATVI:'Activision',HUBS:'HubSpot',SPY:'SPDR S&P 500 ETF',
+  QQQ:'Invesco QQQ',VTI:'Vanguard Total Market',VOO:'Vanguard S&P 500',
+  ZEN:'Zendesk',AXON:'Axon Enterprise',TSLA:'Tesla',SBUX:'Starbucks',
+  FVRR:'Fiverr',LMND:'Lemonade',UPST:'Upstart',SFIX:'Stitch Fix',TDOC:'Teladoc',
+  JNJ:'Johnson & Johnson',BA:'Boeing',JPM:'JPMorgan Chase',KNSL:'Kinsale Capital',
+  VBK:'Vanguard Small-Cap Growth',FB:'Meta (was FB)',AAXN:'Axon (was AAXN)'
+};
+
+const SECTOR_MAP = {
+  AAPL:'Technology',ADBE:'Technology',AMZN:'Consumer Disc.',ANET:'Technology',
+  AVGO:'Technology',BKNG:'Consumer Disc.',CRM:'Technology',ETSY:'Consumer Disc.',
+  FTNT:'Technology',GOOGL:'Comm. Services',GRAB:'Technology',MCD:'Consumer Staples',
+  META:'Comm. Services',MSFT:'Technology',NKE:'Consumer Disc.',NOW:'Technology',
+  NUKZ:'Energy',NVDA:'Technology',ORCL:'Technology',PANW:'Technology',
+  VEEV:'Healthcare IT',YUMC:'Consumer Staples'
+};
+
+// ===== FORMATTING =====
+const fmt$ = (n,dec=0) => (n<0?'-$':'$')+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+const fmtPct = (n,dec=2) => (n>=0?'+':'')+n.toFixed(dec)+'%';
+const fmtSign = (n,dec=2) => (n>=0?'+':'')+n.toFixed(dec);
+const plClass = n => n>0?'pos':n<0?'neg':'neu';
+const plBgClass = n => n>0?'pos-bg':n<0?'neg-bg':'';
+
+// ===== INDEXEDDB =====
+const DB = (() => {
+  let db;
+  const open = () => new Promise((res,rej) => {
+    if(db) return res(db);
+    const req = indexedDB.open('portfolio',2);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('trades')) d.createObjectStore('trades',{keyPath:'id',autoIncrement:true});
+      if(!d.objectStoreNames.contains('prices')) d.createObjectStore('prices',{keyPath:'ticker'});
+      if(!d.objectStoreNames.contains('meta')) d.createObjectStore('meta',{keyPath:'key'});
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = () => rej(req.error);
+  });
+  const tx = (store,mode='readonly') => open().then(d => d.transaction(store,mode).objectStore(store));
+  const all = store => tx(store).then(s => new Promise((res,rej) => { const r=s.getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }));
+  const put = (store,obj) => tx(store,'readwrite').then(s => new Promise((res,rej) => { const r=s.put(obj); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }));
+  const del = (store,key) => tx(store,'readwrite').then(s => new Promise((res,rej) => { const r=s.delete(key); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }));
+  const clear = store => tx(store,'readwrite').then(s => new Promise((res,rej) => { const r=s.clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }));
+  return { open, all, put, del, clear };
+})();
+
+// ===== APP STATE =====
+const State = {
+  trades: [],       // embedded IBKR trades
+  manualTrades: [], // from IndexedDB
+  prices: {},       // live Finnhub prices
+  priceTs: 0,       // timestamp of last fetch
+  splits: [...SPLITS_BASE],
+  screen: 'dashboard',
+  txFilter: { year:'all', ticker:'', broker:'all', type:'all' },
+  fifo: null,       // computed FIFO result
+};
+
+// ===== FIFO ENGINE =====
+function runFIFO(allTrades) {
+  const lots = {};
+  const realByTicker = {};
+  const realByYear = {};
+  const firstBuy = {}, lastSell = {};
+
+  for (const t of allTrades) {
+    const [date, rawTicker, qty, price] = t;
+    const ticker = TICKER_ALIASES[rawTicker] || rawTicker;
+    const year = date.slice(0,4);
+    if (!lots[ticker]) lots[ticker] = [];
+    if (!realByTicker[ticker]) realByTicker[ticker] = 0;
+    if (!realByYear[year]) realByYear[year] = 0;
+    if (!firstBuy[ticker] && qty > 0) firstBuy[ticker] = date;
+    if (qty < 0) lastSell[ticker] = date;
+
+    if (qty > 0) {
+      lots[ticker].push({qty, price, date, ticker: rawTicker});
+    } else {
+      let rem = Math.abs(qty);
+      while (rem > 0.001 && lots[ticker].length) {
+        const lot = lots[ticker][0];
+        const used = Math.min(lot.qty, rem);
+        const pl = used * (price - lot.price);
+        realByTicker[ticker] += pl;
+        realByYear[year] += pl;
+        lot.qty -= used; rem -= used;
+        if (lot.qty < 0.001) lots[ticker].shift();
+      }
+    }
+  }
+
+  const openPos = {}, closedPos = [];
+  const openSet = new Set();
+  for (const [tk, lotList] of Object.entries(lots)) {
+    const totalQty = lotList.reduce((s,l)=>s+l.qty, 0);
+    if (totalQty > 0.001) {
+      openSet.add(tk);
+      const totalCost = lotList.reduce((s,l)=>s+l.qty*l.price, 0);
+      openPos[tk] = { qty: totalQty, avgCost: totalCost/totalQty, lots: lotList, realPL: realByTicker[tk]||0 };
+    }
+  }
+  for (const [tk, pl] of Object.entries(realByTicker)) {
+    if (!openSet.has(tk)) {
+      closedPos.push({ ticker: tk, realPL: pl, firstBuy: firstBuy[tk]||'', lastSell: lastSell[tk]||'' });
+    }
+  }
+  closedPos.sort((a,b)=>b.realPL - a.realPL);
+  return { openPos, closedPos, realByYear, realByTicker, lots };
+}
+
+function getAllTrades() {
+  const embedded = State.trades;
+  const manual = State.manualTrades.map(t => [
+    t.date, t.ticker,
+    (t.action==='sell'||t.action==='asgn-sell') ? -Math.abs(t.qty) : Math.abs(t.qty),
+    t.price, t.amount||0,
+    (t.action==='asgn-buy'||t.action==='asgn-sell') ? 1 : 0
+  ]);
+  return [...embedded, ...manual].sort((a,b)=>a[0]<b[0]?-1:1);
+}
+
+// ===== FINNHUB API =====
+const Finnhub = {
+  key: () => localStorage.getItem('finnhub_key') || DEFAULT_KEY,
+  async quote(ticker) {
+    const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${this.key()}`);
+    if (!r.ok) throw new Error('rate limited');
+    return r.json();
+  },
+  async candles(ticker, from, to) {
+    const r = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=W&from=${from}&to=${to}&token=${this.key()}`);
+    if (!r.ok) throw new Error('candles failed');
+    return r.json();
+  },
+  async profile(ticker) {
+    const r = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${ticker}&token=${this.key()}`);
+    if (!r.ok) return null;
+    return r.json();
+  },
+  async refreshAll(tickers) {
+    const results = {};
+    for (let i=0; i<tickers.length; i++) {
+      if (i>0 && i%10===0) await new Promise(r=>setTimeout(r,1100));
+      try { results[tickers[i]] = await this.quote(tickers[i]); }
+      catch(e) { console.warn('quote failed', tickers[i], e); }
+    }
+    return results;
+  }
+};
+
+// ===== NAVIGATION =====
+function navigate(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.screen===screen));
+  document.getElementById('screen-'+screen).classList.add('active');
+  document.getElementById('fab').style.display = screen==='transactions' ? 'flex' : 'none';
+  State.screen = screen;
+  renderScreen(screen);
+}
+
+function renderScreen(s) {
+  if (s==='dashboard') renderDashboard();
+  else if (s==='holdings') renderHoldings();
+  else if (s==='closed') renderClosed();
+  else if (s==='transactions') renderTransactions();
+  else if (s==='analytics') renderAnalytics();
+}
+
+// ===== PRICE HELPERS =====
+function getPrice(ticker) {
+  const p = State.prices[ticker];
+  if (p) return p.c || p;
+  return IBKR_POSITIONS[ticker]?.ibkrClose || 0;
+}
+function getChange(ticker) {
+  const p = State.prices[ticker];
+  if (!p || !p.d) return null;
+  return { d: p.d, dp: p.dp };
+}
+function isStale() {
+  return State.priceTs > 0 && (Date.now()-State.priceTs) > 3600000;
+}
+function priceAgeStr() {
+  if (!State.priceTs) return 'No live prices';
+  const mins = Math.round((Date.now()-State.priceTs)/60000);
+  if (mins < 1) return 'Prices: just now';
+  if (mins < 60) return `Prices: ${mins}m ago`;
+  return `Prices: ${Math.round(mins/60)}h ago`;
+}
+
+// ===== PORTFOLIO CALCULATIONS =====
+function calcPortfolio() {
+  let totalMktVal=0, totalCost=0, totalUnreal=0, totalReal=0;
+  const positions = [];
+  for (const [tk, pos] of Object.entries(IBKR_POSITIONS)) {
+    const price = getPrice(tk);
+    const mktVal = pos.qty * price;
+    const costBasis = pos.qty * pos.cost;
+    const unreal = mktVal - costBasis;
+    const real = REALIZED_PL[tk] || 0;
+    const extraReal = (State.fifo?.realByTicker?.[tk] || 0) - (REALIZED_PL[tk]||0);
+    totalMktVal += mktVal;
+    totalCost += costBasis;
+    totalUnreal += unreal;
+    totalReal += real;
+    positions.push({ ticker: tk, qty: pos.qty, cost: pos.cost, price, mktVal, costBasis, unreal, unrealPct: (unreal/costBasis)*100, real, totalPL: unreal+real, totalPLPct: ((unreal+real)/costBasis)*100 });
+  }
+  // Add manual trade realized P&L
+  if (State.fifo) {
+    for (const [tk, pl] of Object.entries(State.fifo.realByTicker)) {
+      if (!IBKR_POSITIONS[tk] && !REALIZED_PL[tk]) totalReal += pl;
+    }
+  }
+  return { positions, totalMktVal, totalCost, totalUnreal, totalReal, totalPL: totalUnreal+totalReal };
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const { totalMktVal, totalUnreal, totalReal, totalPL, positions } = calcPortfolio();
+  const sortedByDay = [...positions].filter(p=>getChange(p.ticker)).sort((a,b)=>{
+    const ca=getChange(a.ticker)?.dp||0, cb=getChange(b.ticker)?.dp||0;
+    return Math.abs(cb)-Math.abs(ca);
+  }).slice(0,5);
+  
+  let dayChange=0, dayChangePct=0;
+  for (const tk of Object.keys(IBKR_POSITIONS)) {
+    const c = getChange(tk);
+    if (c) dayChange += IBKR_POSITIONS[tk].qty * c.d;
+  }
+  const prevMktVal = totalMktVal - dayChange;
+  dayChangePct = prevMktVal ? (dayChange/prevMktVal)*100 : 0;
+
+  document.getElementById('screen-dashboard').innerHTML = `
+<div class="card" style="text-align:center;padding:20px 14px">
+  <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t3);text-transform:uppercase;margin-bottom:8px">PORTFOLIO VALUE</div>
+  <div class="hero" style="font-size:36px">${fmt$(totalMktVal)}</div>
+  ${State.priceTs ? `<div style="margin-top:8px;font-size:15px;font-weight:600" class="${plClass(dayChange)}">${fmt$(dayChange,2)} (${fmtPct(dayChangePct)}) today</div>` : `<div style="margin-top:8px;font-size:12px;color:var(--t3)">Tap refresh for live prices</div>`}
+  ${isStale()?'<span class="stale" style="margin-top:6px;display:inline-block">STALE</span>':''}
+</div>
+
+<div class="stat-grid-3">
+  <div class="stat">
+    <div class="stat-label">Realized</div>
+    <div class="stat-val ${plClass(totalReal)}">${fmt$(totalReal)}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Unrealized</div>
+    <div class="stat-val ${plClass(totalUnreal)}">${fmt$(totalUnreal)}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Total P&L</div>
+    <div class="stat-val ${plClass(totalPL)}">${fmt$(totalPL)}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title" style="margin-bottom:12px">YEAR-BY-YEAR REALIZED P&L</div>
+  <div class="chart-wrap">${svgYearBars()}</div>
+</div>
+
+${sortedByDay.length ? `
+<div class="card">
+  <div class="card-title" style="margin-bottom:10px">TOP MOVERS TODAY</div>
+  ${sortedByDay.map(p=>{
+    const c=getChange(p.ticker);
+    return `<div class="row" onclick="openDetail('${p.ticker}')">
+      <div class="row-left">
+        <div class="ticker">${p.ticker}</div>
+        <div class="co-name">${COMPANY_NAMES[p.ticker]||p.ticker}</div>
+      </div>
+      <div class="row-right">
+        <div class="num ${plClass(c.dp)}" style="font-size:15px;font-weight:700">${fmtPct(c.dp)}</div>
+        <div class="num" style="font-size:12px;color:var(--t2)">${fmt$(p.mktVal)}</div>
+      </div>
+    </div>`;
+  }).join('')}
+</div>` : ''}
+
+<div class="card">
+  <div class="card-title" style="margin-bottom:12px">HOLDINGS WEIGHT</div>
+  ${calcPortfolio().positions.sort((a,b)=>b.mktVal-a.mktVal).map(p=>{
+    const pct = (p.mktVal/totalMktVal)*100;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+      <div style="width:46px;font-size:12px;font-weight:700">${p.ticker}</div>
+      <div style="flex:1;height:14px;background:var(--s2);border-radius:3px;overflow:hidden">
+        <div style="width:${Math.min(pct,100)}%;height:100%;background:var(--b);opacity:0.8;border-radius:3px"></div>
+      </div>
+      <div style="width:42px;text-align:right;font-size:12px;color:var(--t2);font-family:var(--mono)">${pct.toFixed(1)}%</div>
+    </div>`;
+  }).join('')}
+</div>
+<div style="height:8px"></div>`;
+}
+
+// ===== HOLDINGS =====
+function renderHoldings() {
+  const { positions } = calcPortfolio();
+  positions.sort((a,b)=>b.mktVal-a.mktVal);
+  const html = positions.map(p => {
+    const c = getChange(p.ticker);
+    const realPL = REALIZED_PL[p.ticker]||0;
+    return `<div class="holding-row" onclick="openDetail('${p.ticker}')">
+      <div class="hr-top">
+        <div>
+          <span class="ticker">${p.ticker}</span>
+          <span class="co-name" style="margin-left:6px">${COMPANY_NAMES[p.ticker]||''}</span>
+        </div>
+        <div style="text-align:right">
+          <div class="hr-price">${p.price>0?'$'+p.price.toFixed(2):'—'}</div>
+          ${c ? `<div class="hr-change ${plClass(c.dp)}">${fmtPct(c.dp)} ${fmt$(c.d*p.qty,0)}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--t2);margin-bottom:6px">
+        <span>${p.qty} sh @ ${fmt$(p.cost,2)}</span>
+        <span class="num">${fmt$(p.mktVal)} mkt val</span>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <div>
+          <div style="font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.06em">UNREAL P&L</div>
+          <div class="hr-unreal ${plClass(p.unreal)}">${fmt$(p.unreal,0)} <span style="font-size:11px">(${fmtPct(p.unrealPct)})</span></div>
+        </div>
+        ${realPL ? `<div style="text-align:right">
+          <div style="font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.06em">REALIZED</div>
+          <div class="num ${plClass(realPL)}" style="font-size:13px;font-weight:600">${fmt$(realPL,0)}</div>
+        </div>` : ''}
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.06em">TOTAL P&L</div>
+          <div class="num ${plClass(p.totalPL)}" style="font-size:14px;font-weight:700">${fmt$(p.totalPL,0)}</div>
+        </div>
+      </div>
+      ${!State.priceTs ? '<div class="loading-bar"><div class="loading-bar-inner"></div></div>' : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('screen-holdings').innerHTML = `
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+  <div style="font-size:11px;color:var(--t3)">${priceAgeStr()}</div>
+  ${isStale()?'<span class="stale">STALE</span>':''}
+</div>
+${html}<div style="height:8px"></div>`;
+}
+
+// ===== CLOSED POSITIONS =====
+function renderClosed() {
+  const fifo = State.fifo;
+  const openTickers = new Set(Object.keys(IBKR_POSITIONS));
+  
+  // Build closed list from pre-computed REALIZED_PL + FIFO for manual trades
+  const allRealized = {...REALIZED_PL};
+  if (fifo) Object.assign(allRealized, fifo.realByTicker);
+  
+  const closed = Object.entries(allRealized)
+    .filter(([tk]) => !openTickers.has(tk) && allRealized[tk] !== 0)
+    .map(([tk, pl]) => {
+      const fifoData = fifo?.closedPos?.find(c=>c.ticker===tk) || {};
+      return { ticker: tk, realPL: pl, firstBuy: fifoData.firstBuy||'', lastSell: fifoData.lastSell||'' };
+    })
+    .sort((a,b)=>b.realPL-a.realPL);
+
+  const totalClosed = closed.reduce((s,c)=>s+c.realPL, 0);
+  const winners = closed.filter(c=>c.realPL>0).length;
+  const pct = closed.length ? ((winners/closed.length)*100).toFixed(0) : 0;
+
+  document.getElementById('screen-closed').innerHTML = `
+<div class="stat-grid-3" style="margin-bottom:12px">
+  <div class="stat"><div class="stat-label">Total Realized</div><div class="stat-val ${plClass(totalClosed)}">${fmt$(totalClosed)}</div></div>
+  <div class="stat"><div class="stat-label">Win Rate</div><div class="stat-val">${pct}%</div></div>
+  <div class="stat"><div class="stat-label">Positions</div><div class="stat-val">${closed.length}</div></div>
+</div>
+<div class="card">
+  <div class="card-title" style="margin-bottom:10px">CLOSED POSITIONS — ALL TIME</div>
+  ${closed.map(c=>`
+  <div class="row" onclick="openDetail('${c.ticker}')">
+    <div class="row-left">
+      <div class="ticker">${c.ticker}</div>
+      <div class="co-name">${COMPANY_NAMES[c.ticker]||''} ${c.lastSell?'· closed '+c.lastSell.slice(0,7):''}</div>
+    </div>
+    <div class="row-right">
+      <div class="num ${plClass(c.realPL)}" style="font-size:15px;font-weight:700">${fmt$(c.realPL,0)}</div>
+    </div>
+  </div>`).join('')}
+</div><div style="height:8px"></div>`;
+}
+
+// ===== TRANSACTIONS =====
+function renderTransactions() {
+  const all = getAllTrades().map((t,i)=>({idx:i,date:t[0],ticker:TICKER_ALIASES[t[1]]||t[1],origTicker:t[1],qty:t[2],price:t[3],amount:t[4],flags:t[5]}));
+  const f = State.txFilter;
+  
+  let filtered = all.filter(t => {
+    if (f.year !== 'all' && t.date.slice(0,4) !== f.year) return false;
+    if (f.ticker && !t.ticker.toUpperCase().includes(f.ticker.toUpperCase())) return false;
+    if (f.broker === 'ibkr' && t.idx >= State.trades.length) return false;
+    if (f.broker === 'manual' && t.idx < State.trades.length) return false;
+    if (f.type === 'buy' && t.qty <= 0) return false;
+    if (f.type === 'sell' && t.qty >= 0) return false;
+    if (f.type === 'asgn' && !(t.flags & 1)) return false;
+    return true;
+  }).reverse();
+
+  const years = ['all',...[...new Set(all.map(t=>t.date.slice(0,4)))].sort().reverse()];
+  
+  document.getElementById('screen-transactions').innerHTML = `
+<div class="search-wrap">
+  <span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+  <input class="search-inp" type="text" placeholder="Search ticker…" value="${f.ticker}" oninput="State.txFilter.ticker=this.value;renderTransactions()">
+</div>
+<div class="filter-bar">
+  ${years.map(y=>`<button class="pill ${f.year===y?'active':''}" onclick="State.txFilter.year='${y}';renderTransactions()">${y==='all'?'All Years':y}</button>`).join('')}
+</div>
+<div class="filter-bar" style="margin-bottom:10px">
+  ${[['all','All'],['buy','Buys'],['sell','Sells'],['asgn','Assignments']].map(([v,l])=>`<button class="pill ${f.type===v?'active':''}" onclick="State.txFilter.type='${v}';renderTransactions()">${l}</button>`).join('')}
+  ${[['all','All Brokers'],['ibkr','IBKR'],['manual','Manual']].map(([v,l])=>`<button class="pill ${f.broker===v?'active':''}" onclick="State.txFilter.broker='${v}';renderTransactions()">${l}</button>`).join('')}
+</div>
+<div style="font-size:11px;color:var(--t3);margin-bottom:8px">${filtered.length.toLocaleString()} trades</div>
+<div class="card" style="padding:0">
+  ${filtered.slice(0,300).map(t=>{
+    const isBuy = t.qty > 0;
+    const isAsgn = t.flags & 1;
+    const isSAdj = t.flags & 2;
+    const isCorp = t.flags & 4;
+    const isManual = t.idx >= State.trades.length;
+    return `<div class="row" style="padding:10px 12px" onclick="openDetail('${t.ticker}')">
+      <div class="row-left">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="ticker" style="font-size:14px">${t.ticker}</span>
+          ${isAsgn?'<span class="badge badge-asgn">ASGN</span>':''}
+          ${isSAdj?'<span class="badge badge-sadj">ADJ</span>':''}
+          ${isCorp?'<span class="badge badge-corp">CORP</span>':''}
+          ${isManual?'<span class="badge" style="background:var(--bd2);color:var(--b)">MAN</span>':''}
+        </div>
+        <div style="font-size:11px;color:var(--t2)">${t.date} · ${Math.abs(t.qty).toFixed(2)} sh @ $${t.price.toFixed(2)}</div>
+      </div>
+      <div class="row-right">
+        <span class="badge ${isBuy?'badge-buy':'badge-sell'}">${isBuy?'BUY':'SELL'}</span>
+        <div class="num" style="font-size:13px;margin-top:3px;color:var(--t2)">${fmt$(Math.abs(t.amount),2)}</div>
+      </div>
+    </div>`;
+  }).join('')}
+  ${filtered.length>300?`<div style="padding:12px;text-align:center;font-size:12px;color:var(--t3)">Showing 300 of ${filtered.length}. Use filters to narrow results.</div>`:''}
+</div><div style="height:8px"></div>`;
+}
+
+// ===== ANALYTICS =====
+function renderAnalytics() {
+  const fifo = State.fifo;
+  const realByYear = fifo ? fifo.realByYear : {};
+  const { totalMktVal, totalUnreal, totalReal } = calcPortfolio();
+
+  // Sector allocation
+  const sectorVal = {};
+  for (const [tk, pos] of Object.entries(IBKR_POSITIONS)) {
+    const sec = SECTOR_MAP[tk]||'Other';
+    sectorVal[sec] = (sectorVal[sec]||0) + pos.qty * getPrice(tk);
+  }
+
+  // Top/worst
+  const closed = Object.entries(REALIZED_PL).filter(([,v])=>v!==0).map(([k,v])=>({ticker:k,pl:v}));
+  const top5 = [...closed].sort((a,b)=>b.pl-a.pl).slice(0,5);
+  const worst5 = [...closed].sort((a,b)=>a.pl-b.pl).slice(0,5);
+
+  document.getElementById('screen-analytics').innerHTML = `
+<div class="card">
+  <div class="card-title" style="margin-bottom:14px">YEAR-BY-YEAR REALIZED P&L</div>
+  <div class="chart-wrap">${svgYearBars(220)}</div>
+</div>
+
+<div class="card">
+  <div class="card-title" style="margin-bottom:14px">vs S&P 500 (Annual)</div>
+  ${svgBenchmark(realByYear)}
+</div>
+
+<div class="card">
+  <div class="card-title" style="margin-bottom:14px">SECTOR ALLOCATION</div>
+  ${svgSectors(sectorVal, totalMktVal)}
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="stat-label">Total Realized</div><div class="stat-val ${plClass(totalReal)}">${fmt$(totalReal)}</div></div>
+  <div class="stat"><div class="stat-label">Unrealized</div><div class="stat-val ${plClass(totalUnreal)}">${fmt$(totalUnreal)}</div></div>
+</div>
+
+<div class="card">
+  <div class="card-title" style="margin-bottom:10px">BEST CLOSED TRADES</div>
+  ${top5.map(t=>`<div class="row">
+    <div class="row-left"><div class="ticker">${t.ticker}</div><div class="co-name">${COMPANY_NAMES[t.ticker]||''}</div></div>
+    <div class="num pos" style="font-size:15px;font-weight:700">${fmt$(t.pl,0)}</div>
+  </div>`).join('')}
+</div>
+<div class="card">
+  <div class="card-title" style="margin-bottom:10px">WORST CLOSED TRADES</div>
+  ${worst5.map(t=>`<div class="row">
+    <div class="row-left"><div class="ticker">${t.ticker}</div><div class="co-name">${COMPANY_NAMES[t.ticker]||''}</div></div>
+    <div class="num neg" style="font-size:15px;font-weight:700">${fmt$(t.pl,0)}</div>
+  </div>`).join('')}
+</div>
+<div style="height:8px"></div>`;
+}
+
+// ===== SVG CHARTS =====
+function svgYearBars(h=160) {
+  const years = [2020,2021,2022,2023,2024,2025,2026];
+  const vals = {2020:31519,2021:79942,2022:-45192,2023:-47285,2024:-14398,2025:105077,2026:20040};
+  // Merge with FIFO if available
+  if (State.fifo) Object.assign(vals, State.fifo.realByYear);
+  const data = years.map(y=>({y,v:vals[y]||0}));
+  const maxAbs = Math.max(...data.map(d=>Math.abs(d.v)), 1);
+  const W=360, H=h, pad=30, bw=(W-pad*2)/data.length-6;
+  const zeroY = H*0.55;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">`;
+  svg += `<line x1="${pad}" y1="${zeroY}" x2="${W-pad}" y2="${zeroY}" stroke="var(--bd)" stroke-width="1"/>`;
+  data.forEach((d,i) => {
+    const x = pad + i*(bw+6);
+    const barH = (Math.abs(d.v)/maxAbs)*(H*0.45);
+    const isPos = d.v >= 0;
+    const y = isPos ? zeroY-barH : zeroY;
+    const col = isPos ? 'var(--g)' : 'var(--r)';
+    svg += `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(barH,2)}" fill="${col}" rx="3" opacity="0.85"/>`;
+    const valY = isPos ? y-4 : y+barH+12;
+    const vText = Math.abs(d.v)>=1000 ? (d.v>0?'+':'')+Math.round(d.v/1000)+'K' : (d.v>0?'+':'')+d.v;
+    svg += `<text x="${x+bw/2}" y="${valY}" text-anchor="middle" font-size="9" fill="${col}" font-family="var(--mono)" font-weight="700">${vText}</text>`;
+    svg += `<text x="${x+bw/2}" y="${H-2}" text-anchor="middle" font-size="9" fill="var(--t3)">${d.y}</text>`;
+  });
+  svg += '</svg>';
+  return svg;
+}
+
+function svgBenchmark(realByYear) {
+  const years = [2020,2021,2022,2023,2024,2025];
+  let html = '';
+  for (const y of years) {
+    const myPL = realByYear[y] || 0;
+    const sp = SP500[y] || 0;
+    // Show as simple comparison bars
+    const myLabel = (myPL>=0?'+':'')+fmt$(myPL,0);
+    const spLabel = (sp>=0?'+':'')+sp.toFixed(1)+'%';
+    html += `<div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:4px">${y}</div>
+      <div class="bench-row">
+        <div class="bench-label" style="font-size:10px;color:var(--t3)">You</div>
+        <div style="flex:1;height:18px;background:var(--s2);border-radius:3px;overflow:hidden;position:relative">
+          <div style="height:100%;width:${Math.min(Math.abs(myPL)/2000,100)}%;background:${myPL>=0?'var(--g)':'var(--r)'};border-radius:3px;opacity:.8"></div>
+          <span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;font-family:var(--mono);color:${myPL>=0?'var(--g)':'var(--r)'}">${myLabel}</span>
+        </div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label" style="font-size:10px;color:var(--t3)">S&P</div>
+        <div style="flex:1;height:18px;background:var(--s2);border-radius:3px;overflow:hidden;position:relative">
+          <div style="height:100%;width:${Math.min(Math.abs(sp)*1.5,100)}%;background:${sp>=0?'var(--b)':'var(--r)'};border-radius:3px;opacity:.8"></div>
+          <span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;font-family:var(--mono);color:${sp>=0?'var(--b)':'var(--r)'}">${spLabel}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  return html;
+}
+
+function svgSectors(sectorVal, totalMktVal) {
+  const colors = ['#3B82F6','#00D09C','#F5A623','#E91E63','#9C27B0','#FF9800','#00BCD4','#8BC34A'];
+  const entries = Object.entries(sectorVal).sort((a,b)=>b[1]-a[1]);
+  const total = Object.values(sectorVal).reduce((s,v)=>s+v,0)||1;
+  let html = '';
+  entries.forEach(([sec,val],i)=>{
+    const pct = (val/total)*100;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:10px;height:10px;border-radius:2px;background:${colors[i%colors.length]};flex-shrink:0"></div>
+      <div style="flex:1;font-size:13px">${sec}</div>
+      <div style="width:100px;height:12px;background:var(--s2);border-radius:2px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${colors[i%colors.length]};opacity:.8"></div>
+      </div>
+      <div style="width:44px;text-align:right;font-size:12px;font-family:var(--mono);color:var(--t2)">${pct.toFixed(1)}%</div>
+    </div>`;
+  });
+  return html;
+}
+
+// ===== STOCK DETAIL =====
+async function openDetail(ticker) {
+  const overlay = document.getElementById('sheet-detail');
+  const inner = document.getElementById('sheet-detail-inner');
+  document.getElementById('detail-ticker').textContent = ticker;
+  document.getElementById('detail-name').textContent = COMPANY_NAMES[ticker] || '';
+  overlay.style.display = 'flex';
+  requestAnimationFrame(()=>{overlay.classList.add('visible');inner.classList.add('open');});
+  document.getElementById('detail-body').innerHTML = '<div style="text-align:center;padding:30px;color:var(--t2)">Loading…</div>';
+
+  // Get all trades for this ticker (accounting for aliases)
+  const origTickers = [ticker];
+  for (const [k,v] of Object.entries(TICKER_ALIASES)) { if (v===ticker) origTickers.push(k); }
+  const allT = getAllTrades().filter(t => origTickers.includes(t[1]) || origTickers.includes(TICKER_ALIASES[t[1]]||t[1]));
+
+  const ibkrPos = IBKR_POSITIONS[ticker];
+  const price = getPrice(ticker);
+  const realPL = REALIZED_PL[ticker] || (State.fifo?.realByTicker?.[ticker]||0);
+  
+  // Fetch candles for sparkline
+  let candlesHtml = '';
+  try {
+    const to = Math.floor(Date.now()/1000);
+    const from = to - 365*24*3600;
+    const candles = await Finnhub.candles(ticker, from, to);
+    if (candles.s === 'ok' && candles.c?.length > 1) {
+      candlesHtml = svgSparkline(candles.c, candles.t);
+    }
+  } catch(e) {}
+
+  // FIFO lot breakdown for this ticker
+  const localLots = [];
+  const localReal = {pl:0};
+  const tmpLots = [];
+  for (const t of allT.sort((a,b)=>a[0]<b[0]?-1:1)) {
+    if (t[2]>0) tmpLots.push({qty:t[2],price:t[3],date:t[0]});
+    else {
+      let rem=Math.abs(t[2]);
+      while(rem>0.001 && tmpLots.length) {
+        const lot=tmpLots[0]; const used=Math.min(lot.qty,rem);
+        localReal.pl += used*(t[3]-lot.price);
+        lot.qty-=used; rem-=used;
+        if(lot.qty<0.001) tmpLots.shift();
+      }
+    }
+  }
+  for (const l of tmpLots) if (l.qty>0.001) localLots.push(l);
+
+  let lotsHtml='';
+  if (localLots.length) {
+    lotsHtml = `<div class="sec-head">OPEN LOTS</div>
+    <table class="lot-table"><thead><tr><th>Date</th><th>Shares</th><th>Cost</th><th>Mkt Val</th><th>Unreal P&L</th></tr></thead><tbody>
+    ${localLots.map(l=>{
+      const unreal = l.qty*(price-l.price);
+      return `<tr>
+        <td>${l.date.slice(0,10)}</td>
+        <td>${l.qty.toFixed(2)}</td>
+        <td>$${l.price.toFixed(2)}</td>
+        <td>$${(l.qty*price).toFixed(0)}</td>
+        <td class="${plClass(unreal)}">${fmt$(unreal,0)}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+  }
+
+  document.getElementById('detail-body').innerHTML = `
+${candlesHtml ? `<div class="spark-wrap">${candlesHtml}</div>` : ''}
+${ibkrPos ? `
+<div class="stat-grid" style="margin-bottom:10px">
+  <div class="stat"><div class="stat-label">Shares</div><div class="stat-val">${ibkrPos.qty}</div></div>
+  <div class="stat"><div class="stat-label">Avg Cost</div><div class="stat-val num">$${ibkrPos.cost.toFixed(2)}</div></div>
+  <div class="stat"><div class="stat-label">Mkt Value</div><div class="stat-val num">${fmt$(ibkrPos.qty*price,0)}</div></div>
+  <div class="stat"><div class="stat-label">Unreal P&L</div><div class="stat-val num ${plClass(ibkrPos.qty*(price-ibkrPos.cost))}">${fmt$(ibkrPos.qty*(price-ibkrPos.cost),0)}</div></div>
+</div>` : ''}
+${realPL ? `<div class="stat" style="margin-bottom:10px"><div class="stat-label">Realized P&L (All Time)</div><div class="stat-val ${plClass(realPL)}">${fmt$(realPL,0)}</div></div>` : ''}
+${lotsHtml}
+<div class="sec-head">ALL TRANSACTIONS (${allT.length})</div>
+<div class="card" style="padding:0">
+${allT.slice().reverse().map(t=>{
+  const isBuy=t[2]>0; const isAsgn=t[5]&1; const isSAdj=t[5]&2;
+  return `<div class="row" style="padding:10px 12px">
+    <div class="row-left">
+      <div style="display:flex;gap:5px;align-items:center">
+        <span class="badge ${isBuy?'badge-buy':'badge-sell'}">${isBuy?'BUY':'SELL'}</span>
+        ${isAsgn?'<span class="badge badge-asgn">ASGN</span>':''}
+        ${isSAdj?'<span class="badge badge-sadj">ADJ</span>':''}
+      </div>
+      <div style="font-size:11px;color:var(--t2);margin-top:2px">${t[0]}</div>
+    </div>
+    <div class="row-right">
+      <div class="num" style="font-size:13px;font-weight:600">${Math.abs(t[2]).toFixed(2)} sh @ $${t[3].toFixed(2)}</div>
+      <div class="num" style="font-size:11px;color:var(--t2)">${fmt$(Math.abs(t[4]),2)}</div>
+    </div>
+  </div>`;
+}).join('')}
+</div><div style="height:16px"></div>`;
+}
+
+function svgSparkline(closes, times) {
+  if (!closes?.length) return '';
+  const W=360, H=50, pad=4;
+  const min=Math.min(...closes), max=Math.max(...closes);
+  const range=max-min||1;
+  const pts = closes.map((c,i)=>{
+    const x = pad + (i/(closes.length-1))*(W-pad*2);
+    const y = pad + (1-(c-min)/range)*(H-pad*2);
+    return `${x},${y}`;
+  }).join(' ');
+  const isPos = closes[closes.length-1] >= closes[0];
+  const col = isPos ? 'var(--g)' : 'var(--r)';
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function closeSheet(name) {
+  const overlay = document.getElementById('sheet-'+name);
+  const inner = document.getElementById('sheet-'+name+'-inner');
+  inner.classList.remove('open');
+  overlay.classList.remove('visible');
+  setTimeout(()=>overlay.style.display='none', 300);
+}
+
+// ===== ADD TRADE =====
+function setAddMode(mode, btn) {
+  document.querySelectorAll('#add-mode-seg .seg-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('add-single').style.display = mode==='single'?'block':'none';
+  document.getElementById('add-bulk').style.display = mode==='bulk'?'block':'none';
+  document.getElementById('add-csv').style.display = mode==='csv'?'block':'none';
+  if (mode==='bulk' && !document.getElementById('bulk-tbody').children.length) {
+    for(let i=0;i<5;i++) addBulkRow();
+  }
+}
+
+function addBulkRow() {
+  const tbody = document.getElementById('bulk-tbody');
+  const today = new Date().toISOString().slice(0,10);
+  const row = document.createElement('tr');
+  row.innerHTML = `<td><input type="date" value="${today}" class="form-input" style="min-width:110px;padding:4px 6px"></td>
+    <td><input type="text" placeholder="Schwab" class="form-input" style="min-width:70px;padding:4px 6px"></td>
+    <td><input type="text" placeholder="AAPL" class="form-input" style="min-width:60px;padding:4px 6px;text-transform:uppercase"></td>
+    <td><select class="form-input form-select" style="min-width:90px;padding:4px 6px"><option value="buy">Buy</option><option value="sell">Sell</option><option value="asgn-buy">Asgn Buy</option><option value="asgn-sell">Asgn Sell</option></select></td>
+    <td><input type="number" placeholder="100" class="form-input" style="min-width:70px;padding:4px 6px"></td>
+    <td><input type="number" placeholder="0.00" class="form-input" style="min-width:80px;padding:4px 6px"></td>
+    <td><input type="text" placeholder="notes" class="form-input" style="min-width:80px;padding:4px 6px"></td>
+    <td><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--r);font-size:16px;cursor:pointer;padding:4px">✕</button></td>`;
+  tbody.appendChild(row);
+}
+
+async function submitSingleTrade() {
+  const date=document.getElementById('at-date').value;
+  const ticker=document.getElementById('at-ticker').value.toUpperCase().trim();
+  const action=document.getElementById('at-action').value;
+  const qty=parseFloat(document.getElementById('at-qty').value);
+  const price=parseFloat(document.getElementById('at-price').value);
+  const comm=parseFloat(document.getElementById('at-comm').value)||0;
+  const notes=document.getElementById('at-notes').value;
+  if (!date||!ticker||!qty||!price) return toast('Fill in all required fields');
+  const amount = (action==='sell'||action==='asgn-sell') ? qty*price-comm : -(qty*price+comm);
+  await DB.put('trades', {date,ticker,action,qty,price,amount,notes,broker:document.getElementById('at-broker').value,source:'manual'});
+  await loadManualTrades();
+  recomputeFIFO();
+  closeSheet('addtrade');
+  toast('Trade saved');
+  renderScreen(State.screen);
+}
+
+async function submitBulkTrades() {
+  const rows = document.getElementById('bulk-tbody').querySelectorAll('tr');
+  let count=0;
+  for (const row of rows) {
+    const inputs = row.querySelectorAll('input,select');
+    const [date,broker,ticker,action,qty,price] = [...inputs].map((el,i)=>i<=1?el.value:i===2?el.value.toUpperCase():el.value);
+    if(!date||!ticker||!qty||!price) continue;
+    const qtyN=parseFloat(qty), priceN=parseFloat(price);
+    if(!qtyN||!priceN) continue;
+    const amount=(action==='sell'||action==='asgn-sell')?qtyN*priceN:-(qtyN*priceN);
+    await DB.put('trades',{date,ticker,action,qty:qtyN,price:priceN,amount,broker:broker||'Manual',source:'manual'});
+    count++;
+  }
+  await loadManualTrades();
+  recomputeFIFO();
+  closeSheet('addtrade');
+  toast(`${count} trade${count!==1?'s':''} saved`);
+  renderScreen(State.screen);
+}
+
+// ===== IBKR CSV IMPORT =====
+function handleCSVFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseIBKRCSV(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseIBKRCSV(text) {
+  const lines = text.split('\n');
+  const newTrades = [];
+  const cutoff = '2026-06-09';
+  const existingKeys = new Set(State.trades.map(t=>`${t[0]}|${t[1]}|${t[2]}|${t[3]}`));
+
+  for (const line of lines) {
+    const row = line.split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+    if (row[0]==='Trades'&&row[1]==='Data'&&row[2]==='Order'&&row[3]==='Stocks') {
+      const symbol=row[5], dtRaw=row[6].replace(/"/g,''), dateStr=dtRaw.split(',')[0].trim();
+      if (dateStr <= cutoff) continue; // already embedded
+      const qty=parseFloat(row[7]), price=parseFloat(row[8]), amount=parseFloat(row[10]);
+      const code=row[15]||'', isAsgn='A'===code||code.includes('A;')||code.includes(';A');
+      const key=`${dateStr}|${symbol}|${qty}|${price}`;
+      if (existingKeys.has(key)) { newTrades.push({date:dateStr,ticker:symbol,qty,price,amount,flags:isAsgn?1:0,dup:true}); continue; }
+      newTrades.push({date:dateStr,ticker:symbol,qty,price,amount,flags:isAsgn?1:0,dup:false});
+    }
+  }
+
+  const toImport = newTrades.filter(t=>!t.dup);
+  const dups = newTrades.filter(t=>t.dup);
+  document.getElementById('csv-preview').style.display='block';
+  document.getElementById('csv-summary').textContent=`${toImport.length} new trades found, ${dups.length} duplicates skipped.`;
+  const table=document.getElementById('csv-preview-table');
+  table.innerHTML=`<thead><tr><th>Date</th><th>Ticker</th><th>Action</th><th>Qty</th><th>Price</th></tr></thead><tbody>${
+    [...toImport.slice(0,50),...dups.slice(0,10).map(t=>({...t,isDup:true}))].map(t=>`
+    <tr class="${t.isDup?'dup':''}"><td>${t.date}</td><td>${t.ticker}</td><td>${t.qty>0?'BUY':'SELL'}</td><td>${Math.abs(t.qty)}</td><td>$${t.price.toFixed(2)}</td></tr>`).join('')
+  }</tbody>`;
+  document.getElementById('csv-confirm-btn').onclick = async () => {
+    for (const t of toImport) await DB.put('trades',{date:t.date,ticker:t.ticker,qty:t.qty,price:t.price,amount:t.amount,action:t.qty>0?'buy':'sell',source:'ibkr-import',flags:t.flags});
+    await loadManualTrades();
+    recomputeFIFO();
+    closeSheet('addtrade');
+    toast(`${toImport.length} trades imported`);
+    renderScreen(State.screen);
+  };
+}
+
+// ===== SETTINGS =====
+function openSplitForm() {
+  const el = document.getElementById('split-form');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+function saveSplit() {
+  const ticker=document.getElementById('sp-ticker').value.toUpperCase().trim();
+  const ratio=parseFloat(document.getElementById('sp-ratio').value);
+  const date=document.getElementById('sp-date').value;
+  if(!ticker||!ratio||!date) return toast('Fill all split fields');
+  State.splits.push([ticker,ratio,date]);
+  DB.put('meta',{key:'splits',value:State.splits});
+  recomputeFIFO();
+  toast(`Split saved: ${ticker} ${ratio}:1 on ${date}`);
+  document.getElementById('split-form').style.display='none';
+}
+
+async function exportData() {
+  const manual = await DB.all('trades');
+  const data = {version:1,exported:new Date().toISOString(),manualTrades:manual,splits:State.splits};
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`portfolio_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Export downloaded');
+}
+
+async function importData(input) {
+  const file=input.files[0]; if(!file) return;
+  const text=await file.text();
+  try {
+    const data=JSON.parse(text);
+    if(data.manualTrades) { await DB.clear('trades'); for(const t of data.manualTrades) await DB.put('trades',t); }
+    if(data.splits) { State.splits=data.splits; await DB.put('meta',{key:'splits',value:data.splits}); }
+    await loadManualTrades();
+    recomputeFIFO();
+    toast('Import successful');
+    renderScreen(State.screen);
+  } catch(e) { toast('Invalid backup file'); }
+}
+
+async function clearManualTrades() {
+  if(!confirm('Delete all manually entered trades? This cannot be undone.')) return;
+  await DB.clear('trades');
+  State.manualTrades=[];
+  recomputeFIFO();
+  toast('Manual trades cleared');
+  renderScreen(State.screen);
+  document.getElementById('set-manual-count').textContent='0 trades in IndexedDB';
+}
+
+// ===== HELPERS =====
+function toast(msg, dur=2500) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), dur);
+}
+
+async function loadManualTrades() {
+  State.manualTrades = await DB.all('trades');
+  const meta = await DB.all('meta');
+  const splitsMeta = meta.find(m=>m.key==='splits');
+  if (splitsMeta) State.splits = splitsMeta.value;
+  document.getElementById('set-manual-count').textContent=`${State.manualTrades.length} trades in IndexedDB`;
+}
+
+function recomputeFIFO() {
+  State.fifo = runFIFO(getAllTrades());
+}
+
+async function App_refresh() {
+  const btn = document.getElementById('btn-refresh');
+  btn.classList.add('refreshing');
+  const tickers = Object.keys(IBKR_POSITIONS);
+  try {
+    const results = await Finnhub.refreshAll(tickers);
+    for (const [tk,data] of Object.entries(results)) {
+      if (data.c) {
+        State.prices[tk] = data;
+        await DB.put('prices',{ticker:tk,...data,ts:Date.now()});
+      }
+    }
+    State.priceTs = Date.now();
+    await DB.put('meta',{key:'priceTs',value:State.priceTs});
+    document.getElementById('topbar-sub').textContent=priceAgeStr();
+    toast('Prices updated');
+  } catch(e) { toast('Refresh failed – check API key'); }
+  btn.classList.remove('refreshing');
+  renderScreen(State.screen);
+}
+
+// ===== INIT =====
+async function init() {
+  // Load trades from JSON file
+  try {
+    const r = await fetch('trades.json');
+    State.trades = await r.json();
+  } catch(e) { State.trades = []; console.warn('Could not load trades.json'); }
+
+  // Init DB
+  await DB.open();
+  await loadManualTrades();
+
+  // Load cached prices
+  const prices = await DB.all('prices');
+  for (const p of prices) { const {ticker,...data}=p; State.prices[ticker]=data; }
+  const meta = await DB.all('meta');
+  const ptsMeta = meta.find(m=>m.key==='priceTs');
+  if (ptsMeta) State.priceTs = ptsMeta.value;
+
+  // Load saved API key
+  const savedKey = localStorage.getItem('finnhub_key');
+  if (savedKey) document.getElementById('set-apikey').value=savedKey;
+  else document.getElementById('set-apikey').value=DEFAULT_KEY;
+
+  // Load theme
+  const theme = localStorage.getItem('theme')||'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('set-theme').checked = theme==='light';
+
+  // Run FIFO
+  recomputeFIFO();
+
+  // Update header
+  document.getElementById('topbar-sub').textContent = priceAgeStr();
+
+  // Render initial screen
+  renderScreen('dashboard');
+
+  // Register SW
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(console.warn);
+  }
+}
+
+// ===== EVENT LISTENERS =====
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => navigate(tab.dataset.screen));
+});
+
+document.getElementById('btn-theme').addEventListener('click', () => {
+  const t = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('theme',t);
+  document.getElementById('set-theme').checked=t==='light';
+});
+
+document.getElementById('btn-refresh').addEventListener('click', App_refresh);
+document.getElementById('fab').addEventListener('click', () => {
+  const overlay=document.getElementById('sheet-addtrade');
+  const inner=document.getElementById('sheet-addtrade-inner');
+  overlay.style.display='flex';
+  requestAnimationFrame(()=>{overlay.classList.add('visible');inner.classList.add('open');});
+  document.getElementById('at-date').value=new Date().toISOString().slice(0,10);
+});
+
+document.getElementById('btn-settings').addEventListener('click', () => {
+  const overlay=document.getElementById('sheet-settings');
+  const inner=document.getElementById('sheet-settings-inner');
+  overlay.style.display='flex';
+  requestAnimationFrame(()=>{overlay.classList.add('visible');inner.classList.add('open');});
+});
+
+document.getElementById('set-apikey').addEventListener('change', function() {
+  localStorage.setItem('finnhub_key', this.value.trim());
+  toast('API key saved');
+});
+
+document.getElementById('set-theme').addEventListener('change', function() {
+  const t = this.checked?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('theme',t);
+});
+
+// Close sheets on overlay click
+document.querySelectorAll('.sheet-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target===overlay) {
+      const name = overlay.id.replace('sheet-','');
+      closeSheet(name);
+    }
+  });
+});
+
+const App = { refresh: App_refresh };
+
+init();
+</script>
+</body>
+</html>
