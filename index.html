@@ -861,25 +861,13 @@ function renderClosed() {
 // ===== TRANSACTIONS =====
 function renderTransactions() {
   const all = getAllTrades().map((t,i)=>({idx:i,date:t[0],ticker:TICKER_ALIASES[t[1]]||t[1],origTicker:t[1],qty:t[2],price:t[3],amount:t[4],flags:t[5]}));
+  State._txAll = all;
   const f = State.txFilter;
-  
-  let filtered = all.filter(t => {
-    if (f.year !== 'all' && t.date.slice(0,4) !== f.year) return false;
-    if (f.ticker && !t.ticker.toUpperCase().includes(f.ticker.toUpperCase())) return false;
-    if (f.broker === 'ibkr' && t.idx >= State.trades.length) return false;
-    if (f.broker === 'manual' && t.idx < State.trades.length) return false;
-    if (f.type === 'buy' && t.qty <= 0) return false;
-    if (f.type === 'sell' && t.qty >= 0) return false;
-    if (f.type === 'asgn' && !(t.flags & 1)) return false;
-    return true;
-  }).reverse();
-
   const years = ['all',...[...new Set(all.map(t=>t.date.slice(0,4)))].sort().reverse()];
-  
   document.getElementById('screen-transactions').innerHTML = `
 <div class="search-wrap">
   <span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-  <input class="search-inp" type="text" placeholder="Search ticker…" value="${f.ticker}" oninput="State.txFilter.ticker=this.value;renderTransactions()">
+  <input class="search-inp" id="tx-search" type="text" placeholder="Search ticker…" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" value="${f.ticker}" oninput="State.txFilter.ticker=this.value.toUpperCase();renderTxResults()">
 </div>
 <div class="filter-bar">
   ${years.map(y=>`<button class="pill ${f.year===y?'active':''}" onclick="State.txFilter.year='${y}';renderTransactions()">${y==='all'?'All Years':y}</button>`).join('')}
@@ -888,7 +876,28 @@ function renderTransactions() {
   ${[['all','All'],['buy','Buys'],['sell','Sells'],['asgn','Assignments']].map(([v,l])=>`<button class="pill ${f.type===v?'active':''}" onclick="State.txFilter.type='${v}';renderTransactions()">${l}</button>`).join('')}
   ${[['all','All Brokers'],['ibkr','IBKR'],['manual','Manual']].map(([v,l])=>`<button class="pill ${f.broker===v?'active':''}" onclick="State.txFilter.broker='${v}';renderTransactions()">${l}</button>`).join('')}
 </div>
-<div style="font-size:11px;color:var(--t3);margin-bottom:8px">${filtered.length.toLocaleString()} trades</div>
+<div id="tx-results"></div>`;
+  renderTxResults();
+}
+
+function renderTxResults() {
+  const all = State._txAll;
+  if (!all) return;
+  const f = State.txFilter;
+  const q = f.ticker.toUpperCase();
+  let filtered = all.filter(t => {
+    if (f.year !== 'all' && t.date.slice(0,4) !== f.year) return false;
+    if (q && !t.ticker.toUpperCase().startsWith(q)) return false;
+    if (f.broker === 'ibkr' && t.idx >= State.trades.length) return false;
+    if (f.broker === 'manual' && t.idx < State.trades.length) return false;
+    if (f.type === 'buy' && t.qty <= 0) return false;
+    if (f.type === 'sell' && t.qty >= 0) return false;
+    if (f.type === 'asgn' && !(t.flags & 1)) return false;
+    return true;
+  }).reverse();
+  const el = document.getElementById('tx-results');
+  if (!el) return;
+  el.innerHTML = `<div style="font-size:11px;color:var(--t3);margin-bottom:8px">${filtered.length.toLocaleString()} trades</div>
 <div class="card" style="padding:0">
   ${filtered.slice(0,300).map(t=>{
     const isBuy = t.qty > 0;
