@@ -656,25 +656,59 @@ function priceAgeStr() {
 
 // ===== PORTFOLIO CALCULATIONS =====
 function calcPortfolio() {
+  // Pre-compute net manual trade qty and cost per ticker
+  const manAdj = {};
+  for (const t of State.manualTrades) {
+    const tk = TICKER_ALIASES[t.ticker] || t.ticker;
+    if (!manAdj[tk]) manAdj[tk] = { qty: 0, buyCost: 0 };
+    const qty = (t.action==='sell'||t.action==='asgn-sell') ? -Math.abs(t.qty) : Math.abs(t.qty);
+    manAdj[tk].qty += qty;
+    if (qty > 0) manAdj[tk].buyCost += qty * t.price;
+  }
+
   let totalMktVal=0, totalCost=0, totalUnreal=0, totalReal=0;
   const positions = [];
+  const handledTickers = new Set();
+
   for (const [tk, pos] of Object.entries(IBKR_POSITIONS)) {
+    handledTickers.add(tk);
+    const adj = manAdj[tk] || { qty: 0, buyCost: 0 };
+    const totalQty = pos.qty + adj.qty;
+    if (totalQty < 0.001) continue;
+    // Blended avg cost: weight IBKR cost by IBKR shares, manual buys by their price
+    const blendedCost = (pos.qty * pos.cost + adj.buyCost) / totalQty;
     const price = getPrice(tk);
-    const mktVal = pos.qty * price;
-    const costBasis = pos.qty * pos.cost;
+    const mktVal = totalQty * price;
+    const costBasis = totalQty * blendedCost;
     const unreal = mktVal - costBasis;
     const real = REALIZED_PL[tk] || 0;
-    const extraReal = (State.fifo?.realByTicker?.[tk] || 0) - (REALIZED_PL[tk]||0);
     totalMktVal += mktVal;
     totalCost += costBasis;
     totalUnreal += unreal;
     totalReal += real;
-    positions.push({ ticker: tk, qty: pos.qty, cost: pos.cost, price, mktVal, costBasis, unreal, unrealPct: (unreal/costBasis)*100, real, totalPL: unreal+real, totalPLPct: ((unreal+real)/costBasis)*100 });
+    positions.push({ ticker: tk, qty: totalQty, cost: blendedCost, price, mktVal, costBasis, unreal, unrealPct: costBasis>0?(unreal/costBasis)*100:0, real, totalPL: unreal+real, totalPLPct: costBasis>0?((unreal+real)/costBasis)*100:0 });
   }
-  // Add manual trade realized P&L
+
+  // New positions from manual trades only (tickers not in IBKR_POSITIONS)
+  for (const [tk, adj] of Object.entries(manAdj)) {
+    if (handledTickers.has(tk) || adj.qty < 0.001) continue;
+    const price = getPrice(tk);
+    const avgCost = adj.qty > 0 ? adj.buyCost / adj.qty : 0;
+    const mktVal = adj.qty * price;
+    const costBasis = adj.qty * avgCost;
+    const unreal = mktVal - costBasis;
+    const real = (State.fifo?.realByTicker?.[tk] || 0);
+    totalMktVal += mktVal;
+    totalCost += costBasis;
+    totalUnreal += unreal;
+    totalReal += real;
+    positions.push({ ticker: tk, qty: adj.qty, cost: avgCost, price, mktVal, costBasis, unreal, unrealPct: costBasis>0?(unreal/costBasis)*100:0, real, totalPL: unreal+real, totalPLPct: costBasis>0?((unreal+real)/costBasis)*100:0 });
+  }
+
+  // Add manual trade realized P&L for fully-closed manual tickers
   if (State.fifo) {
     for (const [tk, pl] of Object.entries(State.fifo.realByTicker)) {
-      if (!IBKR_POSITIONS[tk] && !REALIZED_PL[tk]) totalReal += pl;
+      if (!IBKR_POSITIONS[tk] && !REALIZED_PL[tk] && !manAdj[tk]) totalReal += pl;
     }
   }
   return { positions, totalMktVal, totalCost, totalUnreal, totalReal, totalPL: totalUnreal+totalReal };
@@ -689,9 +723,9 @@ function renderDashboard() {
   }).slice(0,5);
   
   let dayChange=0, dayChangePct=0;
-  for (const tk of Object.keys(IBKR_POSITIONS)) {
-    const c = getChange(tk);
-    if (c) dayChange += IBKR_POSITIONS[tk].qty * c.d;
+  for (const p of positions) {
+    const c = getChange(p.ticker);
+    if (c) dayChange += p.qty * c.d;
   }
   const prevMktVal = totalMktVal - dayChange;
   dayChangePct = prevMktVal ? (dayChange/prevMktVal)*100 : 0;
