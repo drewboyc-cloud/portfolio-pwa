@@ -54,6 +54,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-beh
 .badge-asgn{background:rgba(245,166,35,.15);color:var(--gold)}
 .badge-corp{background:rgba(59,130,246,.15);color:var(--b)}
 .badge-sadj{background:rgba(138,155,181,.12);color:var(--t2)}
+.badge-broker{background:rgba(168,85,247,.15);color:#a855f7}
 /* ROW / TABLE */
 .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);cursor:pointer;gap:8px}
 .row:last-child{border-bottom:none}
@@ -580,7 +581,8 @@ function getAllTrades() {
     t.date, t.ticker,
     (t.action==='sell'||t.action==='asgn-sell') ? -Math.abs(t.qty) : Math.abs(t.qty),
     t.price, t.amount||0,
-    (t.action==='asgn-buy'||t.action==='asgn-sell') ? 1 : 0
+    (t.action==='asgn-buy'||t.action==='asgn-sell') ? 1 : 0,
+    t.broker || 'Schwab / TD Ameritrade'
   ]);
   return [...embedded, ...manual].sort((a,b)=>a[0]<b[0]?-1:1);
 }
@@ -894,7 +896,7 @@ function renderClosed() {
 
 // ===== TRANSACTIONS =====
 function renderTransactions() {
-  const all = getAllTrades().map((t,i)=>({idx:i,date:t[0],ticker:TICKER_ALIASES[t[1]]||t[1],origTicker:t[1],qty:t[2],price:t[3],amount:t[4],flags:t[5]}));
+  const all = getAllTrades().map((t,i)=>({idx:i,date:t[0],ticker:TICKER_ALIASES[t[1]]||t[1],origTicker:t[1],qty:t[2],price:t[3],amount:t[4],flags:t[5],broker:t[6]||null}));
   State._txAll = all;
   const f = State.txFilter;
   const years = ['all',...[...new Set(all.map(t=>t.date.slice(0,4)))].sort().reverse()];
@@ -922,8 +924,8 @@ function renderTxResults() {
   let filtered = all.filter(t => {
     if (f.year !== 'all' && t.date.slice(0,4) !== f.year) return false;
     if (q && !t.ticker.toUpperCase().startsWith(q)) return false;
-    if (f.broker === 'ibkr' && t.idx >= State.trades.length) return false;
-    if (f.broker === 'manual' && t.idx < State.trades.length) return false;
+    if (f.broker === 'ibkr' && t.broker !== null) return false;
+    if (f.broker === 'manual' && t.broker === null) return false;
     if (f.type === 'buy' && t.qty <= 0) return false;
     if (f.type === 'sell' && t.qty >= 0) return false;
     if (f.type === 'asgn' && !(t.flags & 1)) return false;
@@ -938,7 +940,7 @@ function renderTxResults() {
     const isAsgn = t.flags & 1;
     const isSAdj = t.flags & 2;
     const isCorp = t.flags & 4;
-    const isManual = t.idx >= State.trades.length;
+    const brokerLabel = t.broker && t.broker !== 'IBKR' ? (t.broker.includes('Schwab')||t.broker.includes('TD')?'SCHW':t.broker==='Other'?'OTH':t.broker.slice(0,4).toUpperCase()) : null;
     return `<div class="row" style="padding:10px 12px" onclick="openDetail('${t.ticker}')">
       <div class="row-left">
         <div style="display:flex;align-items:center;gap:6px">
@@ -946,7 +948,7 @@ function renderTxResults() {
           ${isAsgn?'<span class="badge badge-asgn">ASGN</span>':''}
           ${isSAdj?'<span class="badge badge-sadj">ADJ</span>':''}
           ${isCorp?'<span class="badge badge-corp">CORP</span>':''}
-          ${isManual?'<span class="badge" style="background:var(--bd2);color:var(--b)">MAN</span>':''}
+          ${brokerLabel?`<span class="badge badge-broker">${brokerLabel}</span>`:''}
         </div>
         <div style="font-size:11px;color:var(--t2)">${t.date} · ${Math.abs(t.qty).toFixed(2)} sh @ $${t.price.toFixed(2)}</div>
       </div>
