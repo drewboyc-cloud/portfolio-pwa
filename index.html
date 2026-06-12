@@ -384,6 +384,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-beh
         <div class="setting-right"><button class="btn btn-outline btn-sm" onclick="openSplitForm()">Add Split</button></div>
       </div>
       <div class="setting-row">
+        <div><div class="setting-label">Ticker Renames</div><div class="setting-sub">Map old symbol to new symbol</div></div>
+        <div class="setting-right"><button class="btn btn-outline btn-sm" onclick="openRenameForm()">Add Rename</button></div>
+      </div>
+      <div class="setting-row">
         <div><div class="setting-label">Export Portfolio</div><div class="setting-sub">Download complete data as JSON</div></div>
         <div class="setting-right"><button class="btn btn-outline btn-sm" onclick="exportData()">Export</button></div>
       </div>
@@ -408,6 +412,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-beh
       </div>
       <button class="btn btn-primary btn-sm" onclick="saveSplit()">Save Split</button>
     </div>
+    <div id="rename-form" style="display:none" class="card card-sm" style="margin-bottom:14px">
+      <div class="sec-head" style="padding-top:0">New Ticker Rename</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group"><label class="form-label">Old Symbol</label><input class="form-input" type="text" id="rn-old" placeholder="TWTR" style="text-transform:uppercase"></div>
+        <div class="form-group"><label class="form-label">New Symbol</label><input class="form-input" type="text" id="rn-new" placeholder="X" style="text-transform:uppercase"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveRename()">Save Rename</button>
+    </div>
+    <div id="rename-list"></div>
     <button class="btn btn-outline btn-full" onclick="closeSheet('settings')" style="margin-bottom:20px">Done</button>
   </div>
 </div>
@@ -424,6 +437,12 @@ const SPLITS_BASE = [
 ];
 
 const TICKER_ALIASES = {FB:'META',AAXN:'AXON',BOMN:'BOC'};
+function resolveAlias(ticker) {
+  return State.userAliases[ticker] || TICKER_ALIASES[ticker] || ticker;
+}
+function allAliases() {
+  return Object.assign({}, TICKER_ALIASES, State.userAliases);
+}
 
 const IBKR_POSITIONS = {
   AAPL:{qty:155,cost:170.6274,ibkrClose:290.55},
@@ -517,6 +536,7 @@ const State = {
   prices: {},       // live Finnhub prices
   priceTs: 0,       // timestamp of last fetch
   splits: [...SPLITS_BASE],
+  userAliases: {},
   screen: 'dashboard',
   txFilter: { year:'all', ticker:'', broker:'all', type:'all' },
   fifo: null,       // computed FIFO result
@@ -532,7 +552,7 @@ function runFIFO(allTrades) {
 
   for (const t of allTrades) {
     const [date, rawTicker, qty, price] = t;
-    const ticker = TICKER_ALIASES[rawTicker] || rawTicker;
+    const ticker = resolveAlias(rawTicker);
     const year = date.slice(0,4);
     if (!lots[ticker]) lots[ticker] = [];
     if (!realByTicker[ticker]) realByTicker[ticker] = 0;
@@ -661,7 +681,7 @@ function calcPortfolio() {
   // Pre-compute net manual trade qty and cost per ticker
   const manAdj = {};
   for (const t of State.manualTrades) {
-    const tk = TICKER_ALIASES[t.ticker] || t.ticker;
+    const tk = resolveAlias(t.ticker);
     if (!manAdj[tk]) manAdj[tk] = { qty: 0, buyCost: 0 };
     const qty = (t.action==='sell'||t.action==='asgn-sell') ? -Math.abs(t.qty) : Math.abs(t.qty);
     manAdj[tk].qty += qty;
@@ -896,7 +916,7 @@ function renderClosed() {
 
 // ===== TRANSACTIONS =====
 function renderTransactions() {
-  const all = getAllTrades().map((t,i)=>({idx:i,date:t[0],ticker:TICKER_ALIASES[t[1]]||t[1],origTicker:t[1],qty:t[2],price:t[3],amount:t[4],flags:t[5],broker:t[6]||null}));
+  const all = getAllTrades().map((t,i)=>({idx:i,date:t[0],ticker:resolveAlias(t[1]),origTicker:t[1],qty:t[2],price:t[3],amount:t[4],flags:t[5],broker:t[6]||null}));
   State._txAll = all;
   const f = State.txFilter;
   const years = ['all',...[...new Set(all.map(t=>t.date.slice(0,4)))].sort().reverse()];
@@ -1107,8 +1127,8 @@ async function openDetail(ticker) {
 
   // Get all trades for this ticker (accounting for aliases)
   const origTickers = [ticker];
-  for (const [k,v] of Object.entries(TICKER_ALIASES)) { if (v===ticker) origTickers.push(k); }
-  const allT = getAllTrades().filter(t => origTickers.includes(t[1]) || origTickers.includes(TICKER_ALIASES[t[1]]||t[1]));
+  for (const [k,v] of Object.entries(allAliases())) { if (v===ticker) origTickers.push(k); }
+  const allT = getAllTrades().filter(t => origTickers.includes(t[1]) || origTickers.includes(resolveAlias(t[1])));
 
   const ibkrPos = IBKR_POSITIONS[ticker];
   const price = getPrice(ticker);
@@ -1344,6 +1364,46 @@ function parseIBKRCSV(text) {
 }
 
 // ===== SETTINGS =====
+function openRenameForm() {
+  const el = document.getElementById('rename-form');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+function saveRename() {
+  const oldTk = document.getElementById('rn-old').value.toUpperCase().trim();
+  const newTk = document.getElementById('rn-new').value.toUpperCase().trim();
+  if (!oldTk || !newTk) return toast('Enter both old and new symbols');
+  if (oldTk === newTk) return toast('Old and new symbols must differ');
+  State.userAliases[oldTk] = newTk;
+  DB.put('meta', {key:'userAliases', value:State.userAliases});
+  recomputeFIFO();
+  renderRenameList();
+  document.getElementById('rename-form').style.display = 'none';
+  document.getElementById('rn-old').value = '';
+  document.getElementById('rn-new').value = '';
+  toast(`Rename saved: ${oldTk} → ${newTk}`);
+  renderScreen(State.screen);
+}
+function deleteRename(oldTk) {
+  delete State.userAliases[oldTk];
+  DB.put('meta', {key:'userAliases', value:State.userAliases});
+  recomputeFIFO();
+  renderRenameList();
+  toast(`Rename removed: ${oldTk}`);
+  renderScreen(State.screen);
+}
+function renderRenameList() {
+  const el = document.getElementById('rename-list');
+  if (!el) return;
+  const entries = Object.entries(State.userAliases);
+  if (!entries.length) { el.innerHTML=''; return; }
+  el.innerHTML = `<div class="sec-head">Active Renames</div>
+    <div class="card card-sm" style="margin-bottom:14px">
+      ${entries.map(([o,n])=>`<div class="setting-row">
+        <div><div class="setting-label">${o} → ${n}</div></div>
+        <div class="setting-right"><button class="btn btn-danger btn-sm" onclick="deleteRename('${o}')">Remove</button></div>
+      </div>`).join('')}
+    </div>`;
+}
 function openSplitForm() {
   const el = document.getElementById('split-form');
   el.style.display = el.style.display==='none' ? 'block' : 'none';
@@ -1362,7 +1422,7 @@ function saveSplit() {
 
 async function exportData() {
   const manual = await DB.all('trades');
-  const data = {version:1,exported:new Date().toISOString(),manualTrades:manual,splits:State.splits};
+  const data = {version:1,exported:new Date().toISOString(),manualTrades:manual,splits:State.splits,userAliases:State.userAliases};
   const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a = document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -1378,6 +1438,7 @@ async function importData(input) {
     const data=JSON.parse(text);
     if(data.manualTrades) { await DB.clear('trades'); for(const t of data.manualTrades) await DB.put('trades',t); }
     if(data.splits) { State.splits=data.splits; await DB.put('meta',{key:'splits',value:data.splits}); }
+    if(data.userAliases) { State.userAliases=data.userAliases; await DB.put('meta',{key:'userAliases',value:data.userAliases}); }
     await loadManualTrades();
     recomputeFIFO();
     toast('Import successful');
@@ -1407,6 +1468,8 @@ async function loadManualTrades() {
   const meta = await DB.all('meta');
   const splitsMeta = meta.find(m=>m.key==='splits');
   if (splitsMeta) State.splits = splitsMeta.value;
+  const aliasesMeta = meta.find(m=>m.key==='userAliases');
+  if (aliasesMeta) State.userAliases = aliasesMeta.value || {};
   document.getElementById('set-manual-count').textContent=`${State.manualTrades.length} trades in IndexedDB`;
 }
 
@@ -1508,6 +1571,7 @@ document.getElementById('btn-settings').addEventListener('click', () => {
   const inner=document.getElementById('sheet-settings-inner');
   overlay.style.display='flex';
   requestAnimationFrame(()=>{overlay.classList.add('visible');inner.classList.add('open');});
+  renderRenameList();
 });
 
 document.getElementById('set-apikey').addEventListener('change', function() {
