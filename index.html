@@ -1515,7 +1515,7 @@ function recomputeFIFO() {
 async function App_refresh() {
   const btn = document.getElementById('btn-refresh');
   btn.classList.add('refreshing');
-  const tickers = Object.keys(IBKR_POSITIONS);
+  const tickers = calcPortfolio().positions.map(p => p.ticker);
   try {
     const results = await Finnhub.refreshAll(tickers);
     for (const [tk,data] of Object.entries(results)) {
