@@ -98,7 +98,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-beh
 .sheet-handle{width:36px;height:4px;background:var(--t3);border-radius:2px;margin:12px auto 16px}
 .sheet-title{font-size:18px;font-weight:700;margin-bottom:16px;padding-top:4px}
 .sheet-title-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-top:4px}
-.sheet-close{background:var(--s3);border:none;color:var(--t2);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.sheet-close{background:var(--s3);border:none;color:var(--t2);width:44px;height:44px;min-width:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;margin-right:2px;flex-shrink:0}
+.sheet-close-btn{width:100%;padding:14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad);color:var(--t2);font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;margin-bottom:8px}
 /* FORMS */
 .form-group{margin-bottom:14px}
 .form-label{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px;display:block}
@@ -251,6 +252,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-beh
       <button class="sheet-close" onclick="closeSheet('detail')">✕</button>
     </div>
     <div id="detail-body"></div>
+    <button class="sheet-close-btn" onclick="closeSheet('detail')">Close</button>
   </div>
 </div>
 
@@ -288,12 +290,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-beh
       </div>
       <div class="form-group">
         <label class="form-label">Action</label>
-        <select class="form-input form-select" id="at-action">
-          <option value="buy">Buy</option>
-          <option value="sell">Sell</option>
-          <option value="asgn-buy">Assignment – Buy (Put Assigned)</option>
-          <option value="asgn-sell">Assignment – Sell (Call Called Away)</option>
-        </select>
+        <div class="seg-control" id="at-action-seg">
+          <button class="seg-btn active" data-val="buy" onclick="setTradeAction('buy',this)">Buy</button>
+          <button class="seg-btn" data-val="sell" onclick="setTradeAction('sell',this)">Sell</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad-s);padding:11px 12px">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--t1)">Assignment</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px" id="at-asgn-label">Put assigned — shares bought to you</div>
+          </div>
+          <label class="toggle" style="margin-left:12px"><input type="checkbox" id="at-asgn" onchange="updateAsgnLabel()"><span class="toggle-slider"></span></label>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div class="form-group">
@@ -1191,10 +1200,23 @@ function addBulkRow() {
   tbody.appendChild(row);
 }
 
+function setTradeAction(val, btn) {
+  document.querySelectorAll('#at-action-seg .seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateAsgnLabel();
+}
+function updateAsgnLabel() {
+  const isBuy = document.querySelector('#at-action-seg .seg-btn.active')?.dataset.val === 'buy';
+  document.getElementById('at-asgn-label').textContent = isBuy
+    ? 'Put assigned — shares bought to you'
+    : 'Call assigned — shares called away';
+}
 async function submitSingleTrade() {
   const date=document.getElementById('at-date').value;
   const ticker=document.getElementById('at-ticker').value.toUpperCase().trim();
-  const action=document.getElementById('at-action').value;
+  const baseAction=document.querySelector('#at-action-seg .seg-btn.active')?.dataset.val||'buy';
+  const isAsgn=document.getElementById('at-asgn').checked;
+  const action=isAsgn?(baseAction==='buy'?'asgn-buy':'asgn-sell'):baseAction;
   const qty=parseFloat(document.getElementById('at-qty').value);
   const price=parseFloat(document.getElementById('at-price').value);
   const comm=parseFloat(document.getElementById('at-comm').value)||0;
@@ -1431,6 +1453,9 @@ document.getElementById('fab').addEventListener('click', () => {
   overlay.style.display='flex';
   requestAnimationFrame(()=>{overlay.classList.add('visible');inner.classList.add('open');});
   document.getElementById('at-date').value=new Date().toISOString().slice(0,10);
+  document.querySelectorAll('#at-action-seg .seg-btn').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.getElementById('at-asgn').checked=false;
+  updateAsgnLabel();
 });
 
 document.getElementById('btn-settings').addEventListener('click', () => {
