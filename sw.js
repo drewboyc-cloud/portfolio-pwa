@@ -1,4 +1,4 @@
-const CACHE = 'portfolio-v7';
+const CACHE = 'portfolio-v8';
 const ASSETS = ['./', './index.html', './trades.json'];
 
 self.addEventListener('install', e => {

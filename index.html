@@ -55,6 +55,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);overscroll-beh
 .badge-corp{background:rgba(59,130,246,.15);color:var(--b)}
 .badge-sadj{background:rgba(138,155,181,.12);color:var(--t2)}
 .badge-broker{background:rgba(168,85,247,.15);color:#a855f7}
+.badge-ib{background:rgba(59,130,246,.15);color:#3B82F6}
+.badge-schw{background:rgba(168,85,247,.15);color:#a855f7}
 /* ROW / TABLE */
 .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);cursor:pointer;gap:8px}
 .row:last-child{border-bottom:none}
@@ -437,6 +439,11 @@ const SPLITS_BASE = [
 ];
 
 const TICKER_ALIASES = {FB:'META',AAXN:'AXON',BOMN:'BOC'};
+function normBroker(raw) {
+  if (!raw || raw === 'IBKR') return 'IBKR';
+  if (raw.includes('Schwab') || raw.includes('TD')) return 'Schwab';
+  return 'Other';
+}
 function resolveAlias(ticker) {
   return State.userAliases[ticker] || TICKER_ALIASES[ticker] || ticker;
 }
@@ -545,40 +552,56 @@ const State = {
 
 // ===== FIFO ENGINE =====
 function runFIFO(allTrades) {
-  const lots = {};
-  const realByTicker = {};
-  const realByYear = {};
+  const lots = {};              // lots[broker][ticker] = [{qty,price,date,broker}]
+  const realByTicker = {};      // combined across brokers (for Analytics chart)
+  const realByYear = {};        // combined across brokers
+  const realByBrokerTicker = {};// realByBrokerTicker[broker][ticker] = pl
   const firstBuy = {}, lastSell = {};
 
   for (const t of allTrades) {
-    const [date, rawTicker, qty, price] = t;
+    const [date, rawTicker, qty, price,,, rawBroker] = t;
     const ticker = resolveAlias(rawTicker);
+    const broker = normBroker(rawBroker);
     const year = date.slice(0,4);
-    if (!lots[ticker]) lots[ticker] = [];
+
+    if (!lots[broker]) lots[broker] = {};
+    if (!lots[broker][ticker]) lots[broker][ticker] = [];
     if (!realByTicker[ticker]) realByTicker[ticker] = 0;
     if (!realByYear[year]) realByYear[year] = 0;
+    if (!realByBrokerTicker[broker]) realByBrokerTicker[broker] = {};
+    if (!realByBrokerTicker[broker][ticker]) realByBrokerTicker[broker][ticker] = 0;
     if (!firstBuy[ticker] && qty > 0) firstBuy[ticker] = date;
     if (qty < 0) lastSell[ticker] = date;
 
     if (qty > 0) {
-      lots[ticker].push({qty, price, date, ticker: rawTicker});
+      lots[broker][ticker].push({qty, price, date, ticker: rawTicker, broker});
     } else {
       let rem = Math.abs(qty);
-      while (rem > 0.001 && lots[ticker].length) {
-        const lot = lots[ticker][0];
+      while (rem > 0.001 && lots[broker][ticker].length) {
+        const lot = lots[broker][ticker][0];
         const used = Math.min(lot.qty, rem);
         const pl = used * (price - lot.price);
         realByTicker[ticker] += pl;
         realByYear[year] += pl;
+        realByBrokerTicker[broker][ticker] += pl;
         lot.qty -= used; rem -= used;
-        if (lot.qty < 0.001) lots[ticker].shift();
+        if (lot.qty < 0.001) lots[broker][ticker].shift();
       }
+    }
+  }
+
+  // Flatten lots across brokers for openPos / closedPos summaries
+  const flatLots = {};
+  for (const byTicker of Object.values(lots)) {
+    for (const [tk, lotList] of Object.entries(byTicker)) {
+      if (!flatLots[tk]) flatLots[tk] = [];
+      flatLots[tk].push(...lotList);
     }
   }
 
   const openPos = {}, closedPos = [];
   const openSet = new Set();
-  for (const [tk, lotList] of Object.entries(lots)) {
+  for (const [tk, lotList] of Object.entries(flatLots)) {
     const totalQty = lotList.reduce((s,l)=>s+l.qty, 0);
     if (totalQty > 0.001) {
       openSet.add(tk);
@@ -592,7 +615,7 @@ function runFIFO(allTrades) {
     }
   }
   closedPos.sort((a,b)=>b.realPL - a.realPL);
-  return { openPos, closedPos, realByYear, realByTicker, lots };
+  return { openPos, closedPos, realByYear, realByTicker, realByBrokerTicker, lots };
 }
 
 function getAllTrades() {
@@ -703,7 +726,11 @@ function calcPortfolio() {
     const mktVal = totalQty * price;
     const costBasis = totalQty * blendedCost;
     const unreal = mktVal - costBasis;
-    const real = REALIZED_PL[tk] || 0;
+    const ibkrReal = REALIZED_PL[tk] || 0;
+    const nonIbkrReal = Object.entries(State.fifo?.realByBrokerTicker || {})
+      .filter(([br]) => br !== 'IBKR')
+      .reduce((sum, [, byTk]) => sum + (byTk[tk] || 0), 0);
+    const real = ibkrReal + nonIbkrReal;
     totalMktVal += mktVal;
     totalCost += costBasis;
     totalUnreal += unreal;
@@ -829,7 +856,7 @@ function renderHoldings() {
   const sortLabel = { value:'VALUE ↓', az:'A → Z', za:'Z → A' }[State.holdingsSort];
   const html = positions.map(p => {
     const c = getChange(p.ticker);
-    const realPL = REALIZED_PL[p.ticker]||0;
+    const realPL = p.real || 0;
     return `<div class="holding-row" onclick="openDetail('${p.ticker}')">
       <div class="hr-top">
         <div>
@@ -1145,23 +1172,29 @@ async function openDetail(ticker) {
     }
   } catch(e) {}
 
-  // FIFO lot breakdown for this ticker
+  // FIFO lot breakdown for this ticker — separated by broker
   const localLots = [];
   const localReal = {pl:0};
-  const tmpLots = [];
+  const tmpLots = {}; // tmpLots[broker] = [{qty,price,date,broker}]
   for (const t of allT.sort((a,b)=>a[0]<b[0]?-1:1)) {
-    if (t[2]>0) tmpLots.push({qty:t[2],price:t[3],date:t[0]});
-    else {
+    const broker = normBroker(t[6]);
+    if (!tmpLots[broker]) tmpLots[broker] = [];
+    if (t[2]>0) {
+      tmpLots[broker].push({qty:t[2],price:t[3],date:t[0],broker});
+    } else {
       let rem=Math.abs(t[2]);
-      while(rem>0.001 && tmpLots.length) {
-        const lot=tmpLots[0]; const used=Math.min(lot.qty,rem);
+      while(rem>0.001 && tmpLots[broker].length) {
+        const lot=tmpLots[broker][0]; const used=Math.min(lot.qty,rem);
         localReal.pl += used*(t[3]-lot.price);
         lot.qty-=used; rem-=used;
-        if(lot.qty<0.001) tmpLots.shift();
+        if(lot.qty<0.001) tmpLots[broker].shift();
       }
     }
   }
-  for (const l of tmpLots) if (l.qty>0.001) localLots.push(l);
+  for (const bLots of Object.values(tmpLots)) {
+    for (const l of bLots) if (l.qty>0.001) localLots.push(l);
+  }
+  localLots.sort((a,b)=>a.date<b.date?-1:1);
 
   let lotsHtml='';
   if (localLots.length) {
@@ -1169,8 +1202,10 @@ async function openDetail(ticker) {
     <table class="lot-table"><thead><tr><th>Date</th><th>Shares</th><th>Cost</th><th>Mkt Val</th><th>Unreal P&L</th></tr></thead><tbody>
     ${localLots.map(l=>{
       const unreal = l.qty*(price-l.price);
+      const bLabel = l.broker==='Schwab'?'Schw':l.broker==='IBKR'?'IB':'OTH';
+      const bClass = l.broker==='Schwab'?'badge-schw':'badge-ib';
       return `<tr>
-        <td>${l.date.slice(0,10)}</td>
+        <td>${l.date.slice(0,10)} <span class="badge ${bClass}" style="font-size:9px;padding:1px 4px">${bLabel}</span></td>
         <td>${l.qty.toFixed(2)}</td>
         <td>$${l.price.toFixed(2)}</td>
         <td>$${(l.qty*price).toFixed(0)}</td>
